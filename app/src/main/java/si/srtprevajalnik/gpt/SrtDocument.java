@@ -13,8 +13,10 @@ public final class SrtDocument {
     public record Cue(String number, String timing, List<Line> lines) {}
     public record Line(String id, String source, String prompt, String prefix, List<String> tags) {
         public String restore(String translated) {
-            if (translated == null || (translated.isBlank() && !prompt.isBlank()) || translated.contains("\n") || translated.contains("\r"))
-                throw new IllegalArgumentException("Manjka dialog ali pa je prevod spremenil število vrstic: " + id);
+            if (translated == null || (translated.isBlank() && !prompt.isBlank()))
+                throw new IllegalArgumentException("Manjka prevod dialoga: " + id);
+            if (translated.contains("\n") || translated.contains("\r"))
+                throw new IllegalArgumentException("Prevod vsebuje dodatno vrstico: " + id);
             List<String> found = new ArrayList<>();
             Matcher m = TOKEN.matcher(translated);
             while (m.find()) found.add(m.group());

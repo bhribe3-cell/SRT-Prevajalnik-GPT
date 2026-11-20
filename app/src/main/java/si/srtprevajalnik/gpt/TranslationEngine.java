@@ -17,8 +17,12 @@ final class TranslationEngine {
         List<SrtDocument.Line> pending = new ArrayList<>();
         for (SrtDocument.Line line : document.lines) if (!translated.containsKey(line.id())) pending.add(line);
         for (List<SrtDocument.Line> batch : SrtDocument.batches(pending)) {
-            cancel.check(); translated.putAll(translator.translate(batch, cancel)); cancel.check();
-            checkpoint.save(Collections.unmodifiableMap(translated));
+            cancel.check();
+            translated.putAll(translator.translate(batch, document.lines, cancel, confirmed -> {
+                cancel.check(); translated.putAll(confirmed);
+                checkpoint.save(Collections.unmodifiableMap(new LinkedHashMap<>(translated)));
+            }));
+            cancel.check();
         }
         cancel.check();
         String rendered = document.render(translated); SrtDocument validation = SrtDocument.parse(rendered);
