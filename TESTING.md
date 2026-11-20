@@ -1,4 +1,12 @@
-# Preverjanje izdaje 1.0.0
+# Preverjanje izdaje 1.0.1
+
+Popravek z dne 20. novembra 2026 obravnava prijavljeno ustavitev pri `c40_l1`, ko je bilo od 2126 vrstic potrjenih 41. Preizkus z dodatnim prelomom v odgovoru za en ID je pred popravkom padel. Novi preizkusi preverjajo tudi shranitev veljavnega dela odgovora, posamično popravljanje prazne ali izpuščene vrstice s kontekstom, nadaljevanje po prekinitvi ter končni SRT z 2126 vrsticami. Izvorni blok 41 iz uporabnikove datoteke ni bil priložen; primer s tem ID-jem je ponovljen z nadomestnimi odgovori API-ja.
+
+Različica uporablja isto ime paketa in isti podpisni ključ kot 1.0.0 ter višji `versionCode=2`. Format predpomnilnika in Android Keystore se ne spreminjata. Nadgradnja ohrani uporabnikov ključ, izbrane datoteke in potrjene vrstice.
+
+Končni rezultat: **29/29 uspešnih samodejnih preizkusov**, `lintDebug` brez opozoril ali napak ter uspešna gradnja podpisanega APK-ja. Deset novih preizkusov posebej obravnava dodatne prelome, prazne ali izpuščene vrstice, kontekst čez mejo predpomnilnika, trajno neveljaven odgovor brez delnega izvoza, prekinitev med popravljanjem, napačne ID-je, napako prijave in dokument z 2126 vrsticami.
+
+## Preverjanje prvotne izdaje 1.0.0
 
 Preverjeno 16. novembra 2026 v oblačnem Linux okolju z JDK 21 in Android SDK 35. Izhodiščni repozitorij: commit `d7998966dddb00d4c6ba40c7c226c02ea9d2c6de`; vseboval je samo README in tri nastavitvene datoteke Gradle, brez modula `app` ali strežnika.
 
