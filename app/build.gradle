@@ -1,0 +1,40 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'si.srtprevajalnik.gpt'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'si.srtprevajalnik.gpt'
+        minSdk 33
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    signingConfigs {
+        release {
+            if (System.getenv('SRT_KEYSTORE')) {
+                storeFile file(System.getenv('SRT_KEYSTORE'))
+                storePassword System.getenv('SRT_KEYSTORE_PASSWORD')
+                keyAlias 'srt-release'
+                keyPassword System.getenv('SRT_KEYSTORE_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            if (System.getenv('SRT_KEYSTORE')) signingConfig signingConfigs.release
+            minifyEnabled false
+        }
+    }
+    testOptions { unitTests.includeAndroidResources = true }
+    lint { abortOnError true }
+}
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20240303'
+    testImplementation 'org.robolectric:robolectric:4.14.1'
+}
