@@ -22,6 +22,20 @@ public class OpenAiTranslatorTest {
         }
         return new JSONObject().put("translations", output).toString();
     }
+    @Test public void canSelectCroatianOrAutomaticallyDetectInputLanguage() throws Exception {
+        SrtDocument document = SrtDocument.parse("1\n00:00:01,000 --> 00:00:03,000\nDobar dan!\n\n");
+        for (String source : List.of("hr", "auto", "sr", "bs")) {
+            OpenAiTranslator translator = new OpenAiTranslator("fake", "gpt-4.1-mini", source, body -> {
+                String system = body.getJSONArray("messages").getJSONObject(0).getString("content");
+                assertTrue(system.contains(SubtitleLanguages.nameForPrompt(source)));
+                assertTrue(system.contains("natural Slovenian"));
+                return new JSONObject().put("translations", new JSONObject().put("c0_l0", "Dober dan!")).toString();
+            }, null);
+            assertEquals("Dober dan!", translator.translate(document.lines, () -> {}).get("c0_l0"));
+        }
+        assertEquals(11, SubtitleLanguages.CODES.length);
+    }
+
     @Test public void normalizesModelWrappingWithinOneIdWithoutDroppingWordsOrLines() throws Exception {
         SrtDocument document = SrtDocument.parse("41\n00:01:00,000 --> 00:01:03,000\n- <i>How are you today?</i>\n- Hello!\n\n");
         String reply = new JSONObject().put("translations", new JSONArray()

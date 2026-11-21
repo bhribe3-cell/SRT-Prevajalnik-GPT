@@ -22,10 +22,11 @@ public class MainActivity extends Activity {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private JobStore store;
     private EditText apiKey;
-    private Spinner model;
+    private Spinner model, language;
     private Button select, start, stop, export, zip;
     private LinearLayout fileList;
-    private TextView summary, notice;
+    private TextView summary, notice, costSummary;
+    private EditText eurRate;
     private static final java.util.concurrent.atomic.AtomicBoolean FILE_IO = new java.util.concurrent.atomic.AtomicBoolean(false);
     private boolean keySaved;
     private String signature = "";
@@ -41,9 +42,9 @@ public class MainActivity extends Activity {
             android.graphics.Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom); return insets;
         });
-        text(root, "EN  →  SL", 14, true).setTextColor(Color.rgb(22,107,85));
+        text(root, "VEČ JEZIKOV  →  SL", 14, true).setTextColor(Color.rgb(22,107,85));
         text(root, "SRT Prevajalnik GPT", 28, true);
-        text(root, "Angleški podnapisi v slovenščini. Do 25 datotek naenkrat.", 16, false);
+        text(root, "Podnapisi iz 10 jezikov v slovenščino. Do 25 datotek naenkrat.", 16, false);
 
         LinearLayout settings = card(root);
         text(settings, "1. Poveži OpenAI", 20, true);
@@ -58,6 +59,12 @@ public class MainActivity extends Activity {
         model = new Spinner(this);
         model.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, new String[]{"gpt-4.1-mini", "gpt-4.1"}));
         model.setSelection("gpt-4.1".equals(getSharedPreferences("settings", 0).getString("model", "")) ? 1 : 0); settings.addView(model);
+        text(settings, "Izvorni jezik podnapisov", 14, true);
+        language = new Spinner(this);
+        language.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, SubtitleLanguages.LABELS));
+        language.setSelection(SubtitleLanguages.indexOf(getSharedPreferences("settings", 0).getString("queue_language", "auto")));
+        settings.addView(language);
+        text(settings, "Izberi jezik ali uporabi samodejno zaznavanje. Ciljni jezik je vedno slovenščina. Izbira se zaklene po začetku prevajanja, da se ne pomešajo prevodi.", 12, false);
         Button saveKey = button(settings, "Shrani ključ", v -> saveKey());
         Button forget = button(settings, "Pozabi ključ", v -> {
             if (TranslationService.RUNNING.get()) { message("Najprej ustavi prevajanje."); return; }
@@ -77,8 +84,20 @@ public class MainActivity extends Activity {
         text(work, "Potrjeni paketi se shranjujejo sproti. Po prekinitvi tapni »Nadaljuj / ponovi«; lahko se ponovi zadnja nedokončana zahteva API-ja.", 12, false);
         fileList = new LinearLayout(this); fileList.setOrientation(LinearLayout.VERTICAL); work.addView(fileList);
 
+        LinearLayout costs = card(root);
+        text(costs, "3. Poraba OpenAI API", 20, true);
+        costSummary = text(costs, "Podatkov o porabi še ni.", 16, true);
+        text(costs, "Prikazane so lokalne OCENE za zahteve te aplikacije, tudi za uspešne API-odgovore, ki jih je treba ponoviti. To ni dejanski račun OpenAI. Zneski ne vključujejo davkov, drugih aplikacij ali zahtev brez podatkov o porabi.", 12, false);
+        text(costs, "Približen tečaj: 1 USD = koliko EUR?", 14, true);
+        eurRate = new EditText(this);
+        eurRate.setSingleLine(true); eurRate.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        eurRate.setText(getSharedPreferences("settings", 0).getString("eur_per_usd", "0.90"));
+        costs.addView(eurRate);
+        button(costs, "Shrani tečaj EUR", v -> saveExchangeRate());
+        text(costs, "Tečaj je ročno nastavljiv in se ne posodablja samodejno. Preveri dejanski obračun na platform.openai.com/usage.", 12, false);
+
         LinearLayout results = card(root);
-        text(results, "3. Shrani podnapise", 20, true);
+        text(results, "4. Shrani podnapise", 20, true);
         export = button(results, "Shrani slovenske SRT v mapo", v -> launch(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION), FOLDER));
         zip = button(results, "Shrani vse prevedene kot ZIP", v -> launch(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("application/zip").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, "Slovenski-podnapisi.zip"), ZIP));
         text(results, "Shranjene datoteke imajo končnico .sl.srt in kodiranje UTF-8. Izvoz vključuje samo v celoti preverjene prevode.", 13, false);
@@ -100,11 +119,33 @@ public class MainActivity extends Activity {
         if (!saveKey()) return;
         try {
             List<JobStore.Job> jobs = store.load(); SubtitleFiles.validateCount(jobs.size());
-            getSharedPreferences("settings", 0).edit().putString("model", model.getSelectedItem().toString()).apply();
+            boolean hasProgress = jobs.stream().anyMatch(j -> j.done > 0 || "Končano".equals(j.status));
+            String selectedLanguage = SubtitleLanguages.CODES[language.getSelectedItemPosition()];
+            android.content.SharedPreferences.Editor prefs = getSharedPreferences("settings", 0).edit()
+                .putString("model", model.getSelectedItem().toString());
+            if (!hasProgress) prefs.putString("queue_language", selectedLanguage);
+            prefs.apply();
             if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
                 requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 200);
             startForegroundService(new Intent(this, TranslationService.class)); message("Prevajanje se začenja. Telefon naj ostane povezan z internetom.");
         } catch (Exception e) { message(TranslationService.friendly(e)); }
+    }
+    private void saveExchangeRate() {
+        try {
+            String rate = eurRate.getText().toString().trim().replace(',', '.');
+            double parsed = Double.parseDouble(rate);
+            if (!Double.isFinite(parsed) || parsed <= 0 || parsed > 5) throw new NumberFormatException();
+            getSharedPreferences("settings", 0).edit().putString("eur_per_usd", rate).apply();
+            message("Tečaj za okvirni preračun v EUR je shranjen.");
+            refresh();
+        } catch (NumberFormatException e) { eurRate.setError("Vnesi pozitivno število, na primer 0,90."); }
+    }
+    private double eurPerUsd() {
+        try { return Double.parseDouble(getSharedPreferences("settings", 0).getString("eur_per_usd", "0.90")); }
+        catch (NumberFormatException e) { return 0.90; }
+    }
+    private String estimatedEur(double usd) {
+        return String.format(Locale.forLanguageTag("sl-SI"), "%.5f €", usd * eurPerUsd());
     }
     private void chooseFiles() {
         if (FILE_IO.get() || TranslationService.RUNNING.get()) return;
@@ -214,15 +255,27 @@ public class MainActivity extends Activity {
             stop.setVisibility(running ? View.VISIBLE : View.GONE);
             export.setEnabled(!FILE_IO.get() && !running && complete > 0); zip.setEnabled(!FILE_IO.get() && !running && complete > 0);
             model.setEnabled(!FILE_IO.get() && !running); apiKey.setEnabled(!running);
+            language.setEnabled(!FILE_IO.get() && !running && jobs.stream().noneMatch(j -> j.done > 0 || "Končano".equals(j.status)));
+            eurRate.setEnabled(!FILE_IO.get());
             start.setText(jobs.stream().anyMatch(j -> j.done > 0 || "Napaka".equals(j.status)) ? "Nadaljuj / ponovi" : "Prevedi v slovenščino");
             summary.setText(jobs.isEmpty() ? "Izbranih ni še nobenih datotek." : "Datoteke: " + jobs.size() + "/25 · Dokončano: " + complete + "/" + jobs.size() + (running ? " · Prevajam …" : ""));
             sig.append(running);
+            UsageLedger.Stats usage;
+            try { usage = new UsageLedger(this).stats(); }
+            catch (Exception e) { usage = new UsageLedger.Stats(); }
+            costSummary.setText("Zadnja zahteva: " + estimatedEur(usage.lastUsd)
+                + "\nDanes: " + estimatedEur(usage.todayUsd)
+                + "\nTa mesec: " + estimatedEur(usage.monthUsd)
+                + "\nSkupaj: " + estimatedEur(usage.totalUsd));
+            sig.append(usage.totalUsd);
             if (!signature.equals(sig.toString())) {
                 signature = sig.toString(); fileList.removeAllViews();
                 for (JobStore.Job job : jobs) {
                     String status = "Prevajam".equals(job.status) && !running ? "Prekinjeno – nadaljuj" : job.status;
                     text(fileList, job.name, 15, true);
-                    text(fileList, status + " · " + job.done + "/" + job.total + " vrstic" + (job.error.isEmpty() ? "" : "\n" + job.error), 13, false);
+                    text(fileList, status + " · " + job.done + "/" + job.total + " vrstic"
+                        + " · Ocena: " + estimatedEur(usage.byJob.getOrDefault(job.id, 0.0))
+                        + (job.error.isEmpty() ? "" : "\n" + job.error), 13, false);
                     ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
                     progress.setMax(Math.max(1, job.total)); progress.setProgress(job.done); fileList.addView(progress);
                 }

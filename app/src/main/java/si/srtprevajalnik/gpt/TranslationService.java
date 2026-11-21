@@ -46,11 +46,18 @@ public final class TranslationService extends Service {
             jobs = store.load(); String key = KeyVault.load(this);
             if (key.isEmpty()) throw new OpenAiTranslator.FatalException("Najprej vnesi in shrani OpenAI API-ključ.");
             String model = getSharedPreferences("settings", 0).getString("model", "gpt-4.1-mini");
-            translator = new OpenAiTranslator(key, model);
+            String language = getSharedPreferences("settings", 0).getString("queue_language", "auto");
+            UsageLedger ledger = new UsageLedger(this);
             for (JobStore.Job job : jobs) {
                 checkCancel();
                 if ("Končano".equals(job.status) && store.output(job).exists()) continue;
                 try {
+                    // Persist each successful API response against the current file, even
+                    // when the same batch needs to be retried for invalid dialogue.
+                    translator = new OpenAiTranslator(key, model, language, (input, cached, output) -> {
+                        try { ledger.record(job.id, model, input, cached, output); }
+                        catch (Exception e) { android.util.Log.w("SRTCosts", "Local cost estimate was not saved.", e); }
+                    });
                     job.status = "Prevajam"; job.error = ""; store.save(jobs);
                     SrtDocument document = SrtDocument.parse(JobStore.read(new FileInputStream(store.source(job))));
                     Map<String, String> translations = new LinkedHashMap<>();
