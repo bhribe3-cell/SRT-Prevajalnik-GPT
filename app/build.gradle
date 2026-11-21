@@ -25,6 +25,11 @@ android {
         }
     }
     buildTypes {
+        debug {
+            // Separate package: users can test this without uninstalling signed 1.0.2.
+            applicationIdSuffix '.beta'
+            versionNameSuffix '-test'
+        }
         release {
             if (System.getenv('SRT_KEYSTORE')) signingConfig signingConfigs.release
             minifyEnabled false
