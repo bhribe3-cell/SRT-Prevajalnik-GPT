@@ -1,6 +1,6 @@
 # SRT Prevajalnik GPT – Android
 
-## Nadgradnja 1.1.0 (predlagana; še ni podpisanega APK)
+## Nadgradnja 1.1.0 (testna APK ob podpisani 1.0.2)
 
 - Izbirnik izvora: samodejno zaznavanje ali angleščina, hrvaščina, nemščina, francoščina, španščina, italijanščina, nizozemščina, norveščina, srbščina (latinica/cirilica) in bosanščina; prevod je vedno v slovenščino.
 - Izbira jezika se po začetku obdelave čakalne vrste zaklene, da nadaljevanje ne pomeša različnih izvornih jezikov.
@@ -10,7 +10,11 @@
 - Beleženje stroškov se začne z nadgradnjo: zgodovinskih API računov ni mogoče samodejno rekonstruirati. Podatki so shranjeni lokalno. Dejanska poraba pri napakah brez odziva lahko preseže prikazano oceno.
 - Pred izvozom in uvozom podnapisov uporabljaj UTF-8, še posebej za srbske podnapise v cirilici; starejše 8-bitne kodne strani niso zanesljivo zaznane.
 
-**Pomembno:** Izvorna koda za 1.1.0 se preizkuša v ločeni veji. Povezava do podpisane APK spodaj ostaja za 1.0.2 in NE vsebuje dodatnih jezikov ali beleženja stroškov. GitHubov debug APK ni podpisan z obstoječim izdajnim ključem, zato ga ni mogoče namestiti neposredno kot nadgradnjo podpisane 1.0.2.
+**Testiranje na telefonu:** Debug APK ima ločen ID paketa `si.srtprevajalnik.gpt.beta` in ime »SRT GPT – TESTNA«. Lahko jo namestiš poleg obstoječe podpisane 1.0.2, brez brisanja starih prevodov ali API-ključa. Testna različica ima svojo prazno shrambo: API-ključ vanjo vneseš posebej. Vsaka novo ustvarjena testna APK lahko uporablja drugačen debug podpis; naslednja testna nadgradnja zato ni nujno namestljiva prek prejšnje.
+  
+**Kako pridobiti testno APK:** Na GitHubu odpri uspešno izvajanje *Android checks and APK* v razdelku Actions za vejo `feat/multilingual-cost-tracking`. Pod **Artifacts** prenesi ZIP `SRT-Prevajalnik-GPT-debug`, ga razširi in namesti `app-debug.apk`. Pri nameščanju bo Android morda zahteval dovoljenje za nameščanje iz vira, prek katerega si odprl APK. Povezava do podpisane APK 1.0.2 spodaj ostaja za staro različico in NE vsebuje teh novosti.
+
+**Omejitev:** API-ključ mora biti za preizkus posebej vnesen v testno različico. Vsi podatki, poraba in prenosi se hranijo ločeno od stare aplikacije. Ni še potrjeno delovanje na fizičnem Samsungu.
 
 
 Android aplikacija v slovenščini za prevajanje **1–25 angleških datotek SRT v slovenščino**, z izvozom datotek `.sl.srt` ali skupnega ZIP-a. Podpira Android 13 ali novejši, vključno s Samsung Galaxy A57. APK uporablja Androidovo izvajalno okolje in ne potrebuje knjižnic za posamezno procesorsko arhitekturo.
