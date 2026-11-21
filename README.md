@@ -1,5 +1,18 @@
 # SRT Prevajalnik GPT – Android
 
+## Nadgradnja 1.1.0 (predlagana; še ni podpisanega APK)
+
+- Izbirnik izvora: samodejno zaznavanje ali angleščina, hrvaščina, nemščina, francoščina, španščina, italijanščina, nizozemščina, norveščina, srbščina (latinica/cirilica) in bosanščina; prevod je vedno v slovenščino.
+- Izbira jezika se po začetku obdelave čakalne vrste zaklene, da nadaljevanje ne pomeša različnih izvornih jezikov.
+- Lokalni prikaz **ocen** porabe OpenAI API po zadnji zahtevi, dnevu, mesecu, celotni zgodovini in trenutnih datotekah. Obračun je odvisen od žetonov, ki jih OpenAI vrne v odgovoru; štejejo tudi plačljivi ponovni poskusi z neustreznim odgovorom.
+- Osnova za cene je uradni cenik za gpt-4.1-mini (vhod $0,40 / predpomnjeni $0,10 / izhod $1,60 na milijon žetonov) in gpt-4.1 ($2,00 / $0,50 / $8,00); te številke so statične in jih je treba posodobiti, če se cenik spremeni.
+- Prikaz v EUR uporablja **ročno nastavljiv** tečaj USD→EUR. Začetni faktor 0,90 je samo primer, ne aktualni menjalni tečaj. Aplikacija ne dostopa do porabe drugih aplikacij niti do celotnega OpenAI računa. Dejanske stroške preveri na https://platform.openai.com/usage.
+- Beleženje stroškov se začne z nadgradnjo: zgodovinskih API računov ni mogoče samodejno rekonstruirati. Podatki so shranjeni lokalno. Dejanska poraba pri napakah brez odziva lahko preseže prikazano oceno.
+- Pred izvozom in uvozom podnapisov uporabljaj UTF-8, še posebej za srbske podnapise v cirilici; starejše 8-bitne kodne strani niso zanesljivo zaznane.
+
+**Pomembno:** Izvorna koda za 1.1.0 se preizkuša v ločeni veji. Povezava do podpisane APK spodaj ostaja za 1.0.2 in NE vsebuje dodatnih jezikov ali beleženja stroškov. GitHubov debug APK ni podpisan z obstoječim izdajnim ključem, zato ga ni mogoče namestiti neposredno kot nadgradnjo podpisane 1.0.2.
+
+
 Android aplikacija v slovenščini za prevajanje **1–25 angleških datotek SRT v slovenščino**, z izvozom datotek `.sl.srt` ali skupnega ZIP-a. Podpira Android 13 ali novejši, vključno s Samsung Galaxy A57. APK uporablja Androidovo izvajalno okolje in ne potrebuje knjižnic za posamezno procesorsko arhitekturo.
 
 **[Prenesi podpisani APK 1.0.2](downloads/SRT-Prevajalnik-GPT-1.0.2.apk?raw=true)** · [Kontrolne vsote SHA-256](downloads/SHA256SUMS.txt)
