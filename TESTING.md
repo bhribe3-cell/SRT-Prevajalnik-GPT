@@ -1,4 +1,14 @@
-# Preverjanje izdaje 1.0.1
+# Preverjanje izdaje 1.0.2
+
+Popravek z dne 21. novembra 2026 obravnava prijavljeno ustavitev pri `c270_l0` po 440 od 1032 vrsticah zaradi napačnega ali podvojenega ID-ja. Prejšnja shema je omejila obliko odgovora, ID pa je bil prosto besedilo. Nova shema za vsako zahtevo določi natanko zahtevane ID-je kot obvezne ključe, vsak s prevodom kot vrednostjo; dodatni ključi so prepovedani.
+
+Novi preizkusi preverjajo pogodbo odgovora s ključem `c270_l0`, napačne zapise (`c270_10`, `c270_I0`), podvojene surove JSON-ključe, vrstni red dialogov, prazne ali nebesedilne vrednosti, neveljavno ovojnico, delne odgovore ter nadaljevanje dokumenta s 1032 vrsticami iz 440 potrjenih vrstic. Podvojeni ključi se dodatno preverijo v Androidovem okolju Robolectric, kjer bi jih običajni `JSONObject` prepisal. Nobena napačno označena vrstica se ne preslika po položaju ali samodejno preimenuje.
+
+Paket in podpisni certifikat ostaneta enaka kot v 1.0.0 in 1.0.1, `versionCode` je 3. Shranjeni ključ, predpomnilnik, izbrane datoteke in končani prevodi uporabljajo isti format. Preizkusi uporabljajo nadomestne odgovore API-ja in ustvarjen SRT, ne uporabnikove celotne datoteke.
+
+Rezultat: **37/37 uspešnih preizkusov**, brez preskočenih, `lintDebug` brez napak ali opozoril in uspešna gradnja podpisanega APK-ja. Preizkus, ki zahteva natančno določene ID-je v shemi, je na ločeni kopiji 1.0.1 padel (`object` namesto starega `array`), z novim formatom pa uspe.
+
+## Preverjanje izdaje 1.0.1
 
 Popravek z dne 20. novembra 2026 obravnava prijavljeno ustavitev pri `c40_l1`, ko je bilo od 2126 vrstic potrjenih 41. Preizkus z dodatnim prelomom v odgovoru za en ID je pred popravkom padel. Novi preizkusi preverjajo tudi shranitev veljavnega dela odgovora, posamično popravljanje prazne ali izpuščene vrstice s kontekstom, nadaljevanje po prekinitvi ter končni SRT z 2126 vrsticami. Izvorni blok 41 iz uporabnikove datoteke ni bil priložen; primer s tem ID-jem je ponovljen z nadomestnimi odgovori API-ja.
 

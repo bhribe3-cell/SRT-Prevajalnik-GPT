@@ -2,9 +2,9 @@
 
 Android aplikacija v slovenščini za prevajanje **1–25 angleških datotek SRT v slovenščino**, z izvozom datotek `.sl.srt` ali skupnega ZIP-a. Podpira Android 13 ali novejši, vključno s Samsung Galaxy A57. APK uporablja Androidovo izvajalno okolje in ne potrebuje knjižnic za posamezno procesorsko arhitekturo.
 
-**[Prenesi podpisani APK 1.0.1](downloads/SRT-Prevajalnik-GPT-1.0.1.apk?raw=true)** · [Kontrolne vsote SHA-256](downloads/SHA256SUMS.txt)
+**[Prenesi podpisani APK 1.0.2](downloads/SRT-Prevajalnik-GPT-1.0.2.apk?raw=true)** · [Kontrolne vsote SHA-256](downloads/SHA256SUMS.txt)
 
-Različica 1.0.1 popravi ustavljanje pri praznem odgovoru za eno vrstico ali pri dodatnem prelomu v odgovoru modela. APK namesti kot **posodobitev obstoječe aplikacije**, nato tapni **Nadaljuj / ponovi**. API-ključ, izbrani SRT in že potrjeni prevodi ostanejo shranjeni; aplikacije pred nadgradnjo ne odstranjuj.
+Različica 1.0.2 popravi ustavljanje zaradi napačnega ali podvojenega ID-ja v odgovoru modela. API zdaj zahteva objekt z vnaprej določenimi ključi za točno zahtevane vrstice. Vključeni so tudi popravki praznih odgovorov in dodatnih prelomov iz 1.0.1. APK namesti kot **posodobitev obstoječe aplikacije**, nato tapni **Nadaljuj / ponovi**. API-ključ, izbrani SRT, že potrjene vrstice in dokončane datoteke ostanejo shranjeni; aplikacije pred nadgradnjo ne odstranjuj.
 
 ## Uporaba
 
@@ -20,6 +20,7 @@ Različica 1.0.1 popravi ustavljanje pri praznem odgovoru za eno vrstico ali pri
 
 - Številčenje in celotne časovne vrstice ostanejo lokalno in se neposredno prepišejo v rezultat. Številke se ne preračunavajo; ohranijo se tudi vodilne ničle in ponovljene številke.
 - Vsaka besedilna vrstica dobi svoj ID. Končni rezultat mora vsebovati natanko en neprazen prevod na vsak ID. Veljavni odgovori se shranijo takoj; manjkajoče ali neveljavne vrstice se do trikrat obdelajo v vedno manjših zahtevah, nazadnje posamično s sosednjim besedilom za kontekst. Potrjene vrstice se ob tem ne pošiljajo ponovno. Podvojeni ali neznani ID-ji zavrnejo celoten dvoumen odgovor.
+- ID-ji so obvezni ključi v strogi shemi odgovora, s katero API omeji generiranje; niso več poljubno besedilo v polju `id`. Dodatni ključi niso dovoljeni. Branje odgovora preverja podvojene ključe še pred sestavljanjem JSON-objekta, da jih Android ne bi tiho prepisal.
 - Dodatni prelomi znotraj odgovora za isti ID se zamenjajo s presledki, brez izpuščanja besedila. Vrstice različnih izvornih ID-jev se nikoli ne združujejo. Prazen prevod ali manjkajoča oznaka oblikovanja še vedno prepreči izvoz nepopolne datoteke.
 - Ohranijo se vrstice posameznih govorcev, začetne govorne črtice, oznake HTML, oznake ASS in `\N`. Časovne oznake in številčenje se preverijo še po ponovnem branju končnega SRT.
 - Neveljavna izvorna datoteka se zavrne z opisom napake. Aplikacija ne izvozi delno prevedenega SRT. To preverjanje zagotavlja strukturo; pomensko zvestobo strojnega prevoda je treba pregledati.

@@ -25,6 +25,11 @@ import static org.robolectric.Shadows.shadowOf;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 35)
 public class MainActivityTest {
+    @Test public void duplicateKeyedApiReplyIsRejectedOnAndroidInsteadOfOverwritingDialogue() {
+        List<SrtDocument.Line> lines = List.of(new SrtDocument.Line("c270_l0", "Hello!", "Hello!", "", List.of()));
+        String reply = "{\"translations\":{\"c270_l0\":\"Živjo!\",\"c270_l0\":\"Drug odgovor\"}}";
+        assertThrows(IllegalArgumentException.class, () -> OpenAiTranslator.parseResponse(reply, lines));
+    }
     public static class FilesProvider extends ContentProvider {
         File directory;
         @Override public boolean onCreate() { directory = new File(getContext().getCacheDir(), "fixtures"); directory.mkdirs(); return true; }
