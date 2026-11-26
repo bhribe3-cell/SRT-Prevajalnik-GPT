@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ExecutorService;
 
 /** Keeps the current movie job separate from the SRT queue and checkpoints each paid unit. */
 public final class VideoProcessingService extends Service {
@@ -84,11 +85,26 @@ public final class VideoProcessingService extends Service {
                     }
                 } else {
                     List<VideoTimeline.Sample> checkpoint = store.loadFrames(); vision = new VideoFrameRecognizer(key, model);
-                    intervals = VideoOcrEngine.scan(reader.durationMs, checkpoint, reader::frame,
-                        frames -> vision.recognize(frames, this::check), samples -> {
+                    ExecutorService apiWorker = DeadlineCall.worker("movie-vision-api");
+                    try {
+                        intervals = VideoOcrEngine.scan(reader.durationMs, checkpoint, time -> {
+                            current.status = "Prepoznavam podnapise · berem sličico " + (time / VideoTimeline.FRAME_INTERVAL_MS + 1); store.save(current);
+                            return reader.frame(time);
+                        }, frames -> {
+                            current.status = "Prepoznavam podnapise · čakam na OpenAI (" + frames.size() + " sličic)"; store.save(current);
+                            try {
+                                return DeadlineCall.run(apiWorker, () -> vision.recognize(frames, this::check), 180_000, this::check,
+                                    "OpenAI se ni odzval v treh minutah. Tapni Nadaljuj; potrjene sličice ostanejo shranjene.");
+                            } catch (Exception e) {
+                                VideoFrameRecognizer request = vision;
+                                Thread cancel = new Thread(request::cancel, "vision-timeout-cancel"); cancel.setDaemon(true); cancel.start();
+                                throw e;
+                            }
+                        }, samples -> {
                             store.saveFrames(samples); current.done = samples.size(); store.save(current);
                             getSystemService(NotificationManager.class).notify(2, notification("Prepoznavam sličice · " + current.done + "/" + current.total, false));
                         }, this::check);
+                    } finally { apiWorker.shutdownNow(); }
                 }
             }
             check();

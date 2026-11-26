@@ -178,7 +178,9 @@ public final class VideoActivity extends Activity {
             long requests = speech ? units : (units + VideoTimeline.MAX_FRAME_BATCH - 1) / VideoTimeline.MAX_FRAME_BATCH;
             detail.setText("Ciljni jezik: " + TargetLanguage.fromCode(job.target).display + " · " + (speech ? "zvočnih odsekov: " : "sličic: ") + units
                 + "\nNačrtovanih zahtev za " + (speech ? "prepis: " : "prepoznavanje: ") + requests + " + prevajanje."
-                + (job.error.isEmpty() ? "" : "\n" + job.error));
+                + (job.error.isEmpty() ? "" : "\n" + job.error)
+                + (running && !activeHere ? "\nDrug zavihek trenutno obdeluje film. Počakaj ali v njem tapni Ustavi, nato nadaljuj tukaj." : "")
+                + (TranslationService.RUNNING.get() ? "\nTrenutno teče prevajanje datotek SRT. Počakaj ali ga ustavi v zavihku SRT." : ""));
             progress.setMax(1000); progress.setProgress(job.total <= 0 ? 0 : (int)Math.min(1000, 1000L * job.done / job.total));
         } catch (Exception e) { status.setText("Napake pri branju napredka: " + TranslationService.friendly(e)); }
     }

@@ -1,3 +1,11 @@
+# Preverjanje izdaje 1.1.2
+
+Uporabnik je prijavil napako »Oblika dekodiranega zvoka ni podprta« pri datoteki MKV z zvočno sledjo DDP 5.1 ter zastoj branja podnapisov po 72 sličicah. Dejanska uporabnikova datoteka in telefon nista bila priložena. Prejšnja različica je zahtevala, da ima dekodirani zvok enako število kanalov in frekvenco kot stisnjena sled in da je PCM16; dekoder lahko namesto tega vrne spremenjeno obliko. Popravek uporablja dejansko obliko izhoda ter PCM8, PCM16, PCM24, PCM32 in PCM float pretvori v PCM16 WAV. Časovne oznake ostanejo v časovni osnovi filma.
+
+Pripravljeni so sintetični preskusni posnetki: MKV z E-AC-3 5.1, MKV z AAC 5.1 in kratek 4K HEVC video. Android emulator API 35 je uspešno dekodiral 4K sličico in AAC 5.1, preizkus E-AC-3 pa je preskočen, ker emulator te zvočne sledi MKV ne ponudi. To ne potrjuje delovanja E-AC-3 na Samsungu. Omejitev čakanja na sličico je 60 sekund, za zahtevo API-ja tri minute; sličice se potrjujejo po paketih in staro stanje je združljivo. Stanje prikaže, ali aplikacija bere sličico ali čaka na OpenAI, ter pojasni onemogočene gumbe, če teče drugo opravilo. Samodejno ne ponavlja zahtev. Kadar se težava pojavi v vnovičnem preizkusu, sta za diagnozo pomembna stopnja in prikazano sporočilo.
+
+Samodejni preizkusi: 84 uspešnih, brez neuspešnih ali preskočenih. Testirani so različni izhodni formati PCM, pretvorba šestih kanalov, meje čakanja, preklic in prikaz zasedenega drugega zavihka. Android lint brez napak; gradnja APK uporablja `versionCode=6` in podpis prejšnjih izdaj. Uporabnikov API-ključ in fizični Samsung nista bila na voljo.
+
 # Preverjanje izdaje 1.1.1
 
 Zavihek za govor pri novih opravilih uporablja model `gpt-4o-transcribe-diarize` in časovne oznake odsekov iz `diarized_json`. Posamezne zahteve vključujejo še zvok okoli meje odseka; podnapis se razporedi glede na sredino časovno označenega govora. Prekrivajoči se govorci se ohranijo v večvrstičnem podnapisu. Časovne oznake in prepoznava so kljub temu ocene, prehod na meji odsekov pa lahko povzroči netočnosti ali podvojitve. Opravila, začeta z različico 1.1.0, nadaljujejo po starem postopku; predpomnilnik in obstoječa čakalna vrsta SRT se ne spreminjata.

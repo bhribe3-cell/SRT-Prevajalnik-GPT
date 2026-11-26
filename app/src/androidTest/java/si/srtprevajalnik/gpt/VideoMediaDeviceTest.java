@@ -59,4 +59,49 @@ public class VideoMediaDeviceTest {
         assertEquals(List.of(new VideoTimeline.Interval(500, 1400, "Hello!")), recognized);
         assertTrue(VideoTimeline.toSrt(recognized).contains("00:00:00,500 --> 00:00:01,400"));
     }
+    @Test public void decodesSurroundEac3FromMkv() throws Exception {
+        Context test = InstrumentationRegistry.getInstrumentation().getContext();
+        Context app = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File fixture = new File(app.getCacheDir(), "surround.mkv");
+        try (InputStream in = test.getAssets().open("sample-51-eac3.mkv"); OutputStream out = new FileOutputStream(fixture)) { in.transferTo(out); }
+        Uri uri = Uri.fromFile(fixture);
+        android.media.MediaExtractor extractor = new android.media.MediaExtractor();
+        boolean supported = false;
+        try {
+            extractor.setDataSource(app, uri, Collections.emptyMap());
+            for (int i = 0; i < extractor.getTrackCount(); i++) {
+                android.media.MediaFormat format = extractor.getTrackFormat(i); String mime = format.getString(android.media.MediaFormat.KEY_MIME);
+                if (mime != null && mime.startsWith("audio/") && new android.media.MediaCodecList(android.media.MediaCodecList.REGULAR_CODECS).findDecoderForFormat(format) != null) supported = true;
+            }
+        } finally { extractor.release(); }
+        org.junit.Assume.assumeTrue("Ta Android emulator ne podpira E-AC-3 v MKV", supported);
+        SpeechTranscriptionEngine.Audio audio = new VideoAudioReader(app, uri).readTimed(0, 2000);
+        byte[] wav = audio.wave(); java.nio.ByteBuffer header = java.nio.ByteBuffer.wrap(wav).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+        assertEquals(1, header.getShort(22)); assertEquals(16, header.getShort(34));
+        int nonzero = 0; for (int i = 44; i < wav.length; i++) if (wav[i] != 0) nonzero++;
+        assertTrue("Decoded surround audio must contain sound", nonzero > 1000);
+    }
+    @Test public void readsScaledFrameFrom4kHevc() throws Exception {
+        Context test = InstrumentationRegistry.getInstrumentation().getContext();
+        Context app = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File fixture = new File(app.getCacheDir(), "sample-4k.mp4");
+        try (InputStream in = test.getAssets().open("sample-4k-hevc.mp4"); OutputStream out = new FileOutputStream(fixture)) { in.transferTo(out); }
+        try (VideoFrameReader reader = new VideoFrameReader(app, Uri.fromFile(fixture))) {
+            VideoFrameRecognizer.Frame frame = reader.frame(0);
+            byte[] jpeg = Base64.decode(frame.jpegBase64(), Base64.NO_WRAP);
+            android.graphics.Bitmap image = BitmapFactory.decodeByteArray(jpeg, 0, jpeg.length);
+            assertNotNull(image); assertEquals(1920, image.getWidth()); assertEquals(1080, image.getHeight()); image.recycle();
+        }
+    }
+    @Test public void decodesSurroundAacFromMkv() throws Exception {
+        Context test = InstrumentationRegistry.getInstrumentation().getContext();
+        Context app = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File fixture = new File(app.getCacheDir(), "surround-aac.mkv");
+        try (InputStream in = test.getAssets().open("sample-51-aac.mkv"); OutputStream out = new FileOutputStream(fixture)) { in.transferTo(out); }
+        SpeechTranscriptionEngine.Audio audio = new VideoAudioReader(app, Uri.fromFile(fixture)).readTimed(0, 2000);
+        byte[] wav = audio.wave(); java.nio.ByteBuffer header = java.nio.ByteBuffer.wrap(wav).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+        assertEquals(1, header.getShort(22)); assertEquals(16, header.getShort(34));
+        int nonzero = 0; for (int i = 44; i < wav.length; i++) if (wav[i] != 0) nonzero++;
+        assertTrue("Decoded 5.1 audio must contain sound", nonzero > 1000);
+    }
 }

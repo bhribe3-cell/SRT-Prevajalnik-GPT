@@ -55,4 +55,20 @@ public class VideoActivityTest {
         assertTrue((intent.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0);
         assertTrue((intent.getFlags() & Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION) != 0);
     }
+    private boolean containsText(View view, String fragment) {
+        if (view instanceof TextView text && text.getText().toString().contains(fragment)) return true;
+        if (view instanceof ViewGroup group) for (int i = 0; i < group.getChildCount(); i++) if (containsText(group.getChildAt(i), fragment)) return true;
+        return false;
+    }
+    @Test public void explainsWhySpeechButtonsAreDisabledWhileImageTabIsRunning() throws Exception {
+        VideoJobStore store = new VideoJobStore(RuntimeEnvironment.getApplication(), true);
+        store.save(new VideoJobStore.Job("content://movie", "film.mkv", "sl", 10000, 100));
+        VideoProcessingService.ACTIVE_SPEECH = false; VideoProcessingService.RUNNING.set(true);
+        try {
+            findText(activity.getWindow().getDecorView(), "Govor").performClick();
+            View root = activity.getWindow().getDecorView();
+            assertTrue(containsText(root, "Drug zavihek trenutno obdeluje film"));
+            assertFalse(findText(root, "Začni / nadaljuj").isEnabled());
+        } finally { VideoProcessingService.RUNNING.set(false); VideoProcessingService.ACTIVE_SPEECH = null; }
+    }
 }
