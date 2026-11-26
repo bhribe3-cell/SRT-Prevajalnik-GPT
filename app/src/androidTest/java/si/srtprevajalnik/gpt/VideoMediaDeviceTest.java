@@ -27,6 +27,7 @@ public class VideoMediaDeviceTest {
             byte[] jpeg = Base64.decode(frame.jpegBase64(), Base64.NO_WRAP);
             android.graphics.Bitmap image = BitmapFactory.decodeByteArray(jpeg, 0, jpeg.length);
             assertNotNull(image); assertEquals(640, image.getWidth()); assertEquals(360, image.getHeight()); image.recycle();
+            reader.reopen(); assertEquals(1500, reader.frame(1500).timeMs());
             VideoFrameRecognizer fakeVision = new VideoFrameRecognizer("fake", "gpt-4.1-mini", body -> "{\"frames\":{\"f0\":\"\",\"f1\":\"Hello!\",\"f2\":\"Hello!\"}}");
             OpenAiTranslator fakeTranslator = new OpenAiTranslator("fake", "gpt-4.1-mini", body -> "{\"translations\":{\"c0_l0\":\"Živjo!\"}}");
             List<VideoTimeline.Sample> savedFrames = new ArrayList<>(); Map<String, String> savedTranslations = new LinkedHashMap<>();

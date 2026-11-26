@@ -49,7 +49,7 @@ public final class VideoActivity extends Activity {
         text(root, speech ? "Govor iz filma" : "Podnapisi v sliki filma", 22, true);
         text(root, speech
             ? "Film ostane na telefonu. Njegov zvok se po krajših odsekih pošlje OpenAI za prepis in prevod v slovenščino. Časovne oznake določi prepoznavanje govora; rezultat preglej."
-            : "Film ostane na telefonu. Izbrane sličice se pošljejo OpenAI za prepoznavanje in prevod. Vzorčenje na 0,5 sekunde lahko spregleda kratke podnapise; rezultat preglej.", 15, false);
+            : "Film ostane na telefonu. Izbrane sličice se pošljejo OpenAI za prepoznavanje in prevod. Vzorčenje na 0,5 sekunde lahko spregleda kratke podnapise. Če sličice ni mogoče prebrati, aplikacija lahko uporabi bližnjo, do 0,1 sekunde stran; rezultat preglej.", 15, false);
         if (!speech) {
             text(root, "Ciljni jezik za nov film", 14, true);
             target = new Spinner(this); target.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, TargetLanguage.values()));

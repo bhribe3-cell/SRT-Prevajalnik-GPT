@@ -1,3 +1,9 @@
+# Preverjanje izdaje 1.1.3
+
+Uporabnik je prijavil zastoj pri 184/11818 potrjenih sličicah: dekoder ni prebral sličice pri 93500 ms. Uporabnikove datoteke in naprave nismo imeli na voljo. Novi regresijski preizkus s simulirano napako nadaljuje s 184 potrjenih sličic, ponovno prebere isto časovno točko po obnovitvi dekoderja in ob neuspehu preskusi sličico do 100 ms stran. Če noben poskus ne uspe, ne pošlje nepopolnega paketa in ne premakne potrjenega napredka. Ponovni poskus bližnje sličice lahko vpliva na zelo kratke dialoge, zato to ni zagotovilo popolnega prepoznavanja.
+
+Uspešnih je vseh 88 enotskih preizkusov, lint je brez napak, APK je podpisan z istim ključem in ima `versionCode=7`. Android emulator je uspešno odprl preskusni video, prebral sličico, ponovno odprl dekoder in prebral naslednjo sličico; uspešen je bil tudi preizkus 4K HEVC. Sintetični primer ne dokazuje, da bo uporabnikova konkretna datoteka uspešno prebrana na njegovem Samsungu. Dejanski OpenAI API in ta film nista bila na voljo za preizkus.
+
 # Preverjanje izdaje 1.1.2
 
 Uporabnik je prijavil napako »Oblika dekodiranega zvoka ni podprta« pri datoteki MKV z zvočno sledjo DDP 5.1 ter zastoj branja podnapisov po 72 sličicah. Dejanska uporabnikova datoteka in telefon nista bila priložena. Prejšnja različica je zahtevala, da ima dekodirani zvok enako število kanalov in frekvenco kot stisnjena sled in da je PCM16; dekoder lahko namesto tega vrne spremenjeno obliko. Popravek uporablja dejansko obliko izhoda ter PCM8, PCM16, PCM24, PCM32 in PCM float pretvori v PCM16 WAV. Časovne oznake ostanejo v časovni osnovi filma.
