@@ -22,6 +22,33 @@ public class OpenAiTranslatorTest {
         }
         return new JSONObject().put("translations", output).toString();
     }
+    @Test public void resumesTaggedLineWhenModelRepeatedlyDropsFormatting() throws Exception {
+        String source = "001\r\n00:00:01,200 --> 00:00:03,400 X1:10\r\n"
+            + "- <i>Hello!</i> {\\an8}How are you?\\NGood morning.\r\n"
+            + "Already translated.\r\n\r\n";
+        SrtDocument document = SrtDocument.parse(source);
+        AtomicInteger calls = new AtomicInteger();
+        OpenAiTranslator translator = new OpenAiTranslator("fake", "gpt-4.1-mini", body -> {
+            JSONArray input = inputs(body);
+            if (calls.incrementAndGet() <= 3) {
+                assertEquals(1, input.length());
+                assertEquals("c0_l0", input.getJSONObject(0).getString("id"));
+                return "{\"translations\":{\"c0_l0\":\"Živjo! Kako si? Dobro jutro.\"}}";
+            }
+            assertEquals(3, input.length());
+            assertFalse(input.toString().contains("⟦T"));
+            assertFalse(input.toString().contains("Already translated"));
+            return reply(input, null, null);
+        });
+        List<Map<String, String>> confirmed = new ArrayList<>();
+        String rendered = TranslationEngine.translate(document, Map.of("c0_l1", "Že prevedeno."),
+            translator, () -> {}, confirmed::add);
+        assertEquals(4, calls.get());
+        assertEquals(1, confirmed.size());
+        assertEquals("Že prevedeno.", confirmed.get(0).get("c0_l1"));
+        assertEquals(source.replace("Hello!", "Živjo!").replace("How are you?", "Kako si?")
+            .replace("Good morning.", "Dobro jutro.").replace("Already translated.", "Že prevedeno."), rendered);
+    }
     @Test public void normalizesModelWrappingWithinOneIdWithoutDroppingWordsOrLines() throws Exception {
         SrtDocument document = SrtDocument.parse("41\n00:01:00,000 --> 00:01:03,000\n- <i>How are you today?</i>\n- Hello!\n\n");
         String reply = new JSONObject().put("translations", new JSONArray()

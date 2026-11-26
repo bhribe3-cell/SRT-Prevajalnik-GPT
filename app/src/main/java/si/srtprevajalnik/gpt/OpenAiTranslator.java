@@ -51,13 +51,54 @@ public final class OpenAiTranslator {
             pending = new ArrayList<>();
             for (SrtDocument.Line line : lines) if (!completed.containsKey(line.id())) pending.add(line);
         }
+        for (Iterator<SrtDocument.Line> remaining = pending.iterator(); remaining.hasNext();) {
+            SrtDocument.Line line = remaining.next();
+            if (line.tags().isEmpty()) continue;
+            cancel.check();
+            String translation;
+            try {
+                translation = translateWithoutFormatting(line, cancel);
+            } catch (JSONException | IllegalArgumentException | InvalidReplyException e) {
+                problems.put(line.id(), e.getMessage());
+                continue;
+            }
+            cancel.check();
+            completed.put(line.id(), translation);
+            progress.confirmed(Map.of(line.id(), translation));
+            remaining.remove();
+        }
         cancel.check();
         if (!pending.isEmpty()) {
             String id = pending.get(0).id();
-            throw new IOException("Prevod vrstice " + id + " ni uspel po treh prilagojenih poskusih. Potrjeni prevodi so shranjeni. "
+            throw new IOException("Prevod vrstice " + id + " ni uspel po prilagojenih poskusih. Potrjeni prevodi so shranjeni. "
                 + problems.getOrDefault(id, "Manjka veljaven prevod."));
         }
         return completed;
+    }
+    private String translateWithoutFormatting(SrtDocument.Line line, Cancel cancel) throws Exception {
+        String[] spans = line.prompt().split("⟦T\\d+⟧", -1);
+        Map<Integer, SrtDocument.Line> fragments = new LinkedHashMap<>();
+        for (int i = 0; i < spans.length; i++) {
+            String text = spans[i].strip();
+            if (!text.matches("(?s).*\\p{L}.*")) continue;
+            fragments.put(i, new SrtDocument.Line(line.id() + "_s" + i, text, text, "", List.of()));
+        }
+        if (!fragments.isEmpty()) {
+            List<SrtDocument.Line> requested = List.copyOf(fragments.values());
+            String reply = requestWithNetworkRetries(requested, requested, 1, cancel);
+            Map<String, String> translations = parseResponse(reply, requested);
+            for (var fragment : fragments.entrySet()) {
+                int index = fragment.getKey();
+                String span = spans[index];
+                spans[index] = span.substring(0, span.length() - span.stripLeading().length())
+                    + translations.get(fragment.getValue().id()) + span.substring(span.stripTrailing().length());
+            }
+        }
+        StringBuilder result = new StringBuilder(spans[0]);
+        for (int i = 1; i < spans.length; i++) result.append("⟦T").append(i - 1).append("⟧").append(spans[i]);
+        String translated = result.toString().strip();
+        line.restore(translated);
+        return translated;
     }
     private String requestWithNetworkRetries(List<SrtDocument.Line> lines, List<SrtDocument.Line> context, int pass, Cancel cancel) throws Exception {
         Exception last = null;
