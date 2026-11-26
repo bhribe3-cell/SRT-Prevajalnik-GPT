@@ -25,6 +25,16 @@ import static org.robolectric.Shadows.shadowOf;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 35)
 public class MainActivityTest {
+    @Test public void importedSelectionRetainsItsTargetEvenIfSpinnerChanges() throws Exception {
+        Field target = MainActivity.class.getDeclaredField("targetLanguage"); target.setAccessible(true);
+        android.widget.Spinner spinner = (android.widget.Spinner) target.get(activity);
+        spinner.setSelection(TargetLanguage.CROATIAN.ordinal());
+        activity.onActivityResult(100, Activity.RESULT_OK, files(1, SrtDocumentTest.SOURCE)); awaitIo();
+        spinner.setSelection(TargetLanguage.GERMAN.ordinal());
+        JobStore.Job job = new JobStore(activity).load().get(0);
+        assertEquals("hr", job.targetLanguage);
+        assertEquals("English-0.hr.srt", job.outputName());
+    }
     @Test public void duplicateKeyedApiReplyIsRejectedOnAndroidInsteadOfOverwritingDialogue() {
         List<SrtDocument.Line> lines = List.of(new SrtDocument.Line("c270_l0", "Hello!", "Hello!", "", List.of()));
         String reply = "{\"translations\":{\"c270_l0\":\"Živjo!\",\"c270_l0\":\"Drug odgovor\"}}";

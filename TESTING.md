@@ -1,3 +1,9 @@
+# Preverjanje izdaje 1.1.0
+
+Samodejni preizkusi: 71 uspešnih, brez neuspešnih ali preskočenih. `lintDebug` je uspešen brez napak, z opozorili. Preizkusi pokrivajo izbiro petih ciljnih jezikov, združljivost stare čakalne vrste, omejitev 25 SRT, shranjevanje in nadaljevanje filmskih nalog, preverjanje odgovorov, časovnice, sestavljanje podnapisov, branje zvoka in zavrnitev prevelikih datotek. Omejitev 20 GB je preizkušena s sintetično redko datoteko, ne z dejanskim 20 GB filmom.
+
+Na Android emulatorju API 35 je izveden preskus z majhnim ustvarjenim MP4: branje sličice in dekodiranje zvoka ter potek do SRT. Odgovori storitve OpenAI so nadomestni. Plačljivi klici API-ja in fizična naprava Samsung Galaxy A57 niso bili na voljo za preizkus. Prepoznava vsebine in časovne oznake filmskih podnapisov so približne; preveriti jih je treba na dejanskem filmu. Izdaja uporablja isti paket in podpisni certifikat kot različica 1.0.2 ter višji `versionCode=4`.
+
 # Preverjanje izdaje 1.0.2
 
 Popravek z dne 21. novembra 2026 obravnava prijavljeno ustavitev pri `c270_l0` po 440 od 1032 vrsticah zaradi napačnega ali podvojenega ID-ja. Prejšnja shema je omejila obliko odgovora, ID pa je bil prosto besedilo. Nova shema za vsako zahtevo določi natanko zahtevane ID-je kot obvezne ključe, vsak s prevodom kot vrednostjo; dodatni ključi so prepovedani.
