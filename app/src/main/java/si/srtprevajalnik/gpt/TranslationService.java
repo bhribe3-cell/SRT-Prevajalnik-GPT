@@ -21,6 +21,7 @@ public final class TranslationService extends Service {
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && "cancel".equals(intent.getAction())) { cancelWork(); return START_NOT_STICKY; }
         startForeground(1, notification("Pripravljam prevod …"));
+        if (VideoProcessingService.RUNNING.get()) { stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(startId); return START_NOT_STICKY; }
         if (!RUNNING.compareAndSet(false, true)) return START_NOT_STICKY;
         cancelled = false; worker = new Thread(this::runTranslation, "srt-translation"); worker.start();
         return START_NOT_STICKY;

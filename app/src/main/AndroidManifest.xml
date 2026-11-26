@@ -14,5 +14,7 @@
             </intent-filter>
         </activity>
         <service android:name=".TranslationService" android:exported="false" android:foregroundServiceType="dataSync" />
+        <service android:name=".VideoProcessingService" android:exported="false" android:foregroundServiceType="dataSync" />
+        <activity android:name=".VideoActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
     </application>
 </manifest>

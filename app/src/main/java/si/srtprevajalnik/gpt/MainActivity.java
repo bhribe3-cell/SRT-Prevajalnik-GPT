@@ -26,7 +26,7 @@ public class MainActivity extends Activity {
     private Button select, start, stop, export, zip;
     private LinearLayout fileList;
     private TextView summary, notice;
-    private static final java.util.concurrent.atomic.AtomicBoolean FILE_IO = new java.util.concurrent.atomic.AtomicBoolean(false);
+    static final java.util.concurrent.atomic.AtomicBoolean FILE_IO = new java.util.concurrent.atomic.AtomicBoolean(false);
     private boolean keySaved;
     private String signature = "";
     private final Runnable poll = new Runnable() { public void run() { refresh(); handler.postDelayed(this, 700); } };
@@ -43,6 +43,10 @@ public class MainActivity extends Activity {
         });
         text(root, "PODNAPISI", 14, true).setTextColor(Color.rgb(22,107,85));
         text(root, "SRT Prevajalnik GPT", 28, true);
+        LinearLayout tabs = new LinearLayout(this); tabs.setOrientation(LinearLayout.HORIZONTAL); root.addView(tabs);
+        tab(tabs, "SRT", v -> {});
+        tab(tabs, "Slika", v -> openVideo(false));
+        tab(tabs, "Govor", v -> openVideo(true));
         text(root, "Prevedi do 25 datotek SRT naenkrat.", 16, false);
 
         LinearLayout settings = card(root);
@@ -60,7 +64,7 @@ public class MainActivity extends Activity {
         model.setSelection("gpt-4.1".equals(getSharedPreferences("settings", 0).getString("model", "")) ? 1 : 0); settings.addView(model);
         Button saveKey = button(settings, "Shrani ključ", v -> saveKey());
         Button forget = button(settings, "Pozabi ključ", v -> {
-            if (TranslationService.RUNNING.get()) { message("Najprej ustavi prevajanje."); return; }
+            if (TranslationService.RUNNING.get() || VideoProcessingService.RUNNING.get()) { message("Najprej ustavi prevajanje."); return; }
             KeyVault.clear(this); keySaved = false; apiKey.setText(""); apiKey.setHint("OpenAI API-ključ"); message("API-ključ je odstranjen s telefona.");
         });
         text(settings, "Ključ je šifriran s sistemom Android Keystore. Ni v APK-ju in ni vključen v varnostno kopiranje.", 12, false);
@@ -90,7 +94,7 @@ public class MainActivity extends Activity {
         refresh();
     }
     private boolean saveKey() {
-        if (TranslationService.RUNNING.get()) { message("Najprej ustavi prevajanje."); return false; }
+        if (TranslationService.RUNNING.get() || VideoProcessingService.RUNNING.get()) { message("Najprej ustavi prevajanje."); return false; }
         String value = apiKey.getText().toString().trim();
         if (value.isEmpty() && keySaved) return true;
         if (!value.startsWith("sk-") || value.length() < 20 || value.matches(".*\\s.*")) { message("Vnesi veljaven OpenAI API-ključ (začne se s sk-)."); return false; }
@@ -100,7 +104,7 @@ public class MainActivity extends Activity {
         } catch (Exception e) { message("Ključa ni mogoče varno shraniti. Vnesi ga znova."); return false; }
     }
     private void beginTranslation() {
-        if (FILE_IO.get() || TranslationService.RUNNING.get()) return;
+        if (FILE_IO.get() || TranslationService.RUNNING.get() || VideoProcessingService.RUNNING.get()) return;
         if (!saveKey()) return;
         try {
             List<JobStore.Job> jobs = store.load(); SubtitleFiles.validateCount(jobs.size());
@@ -111,7 +115,7 @@ public class MainActivity extends Activity {
         } catch (Exception e) { message(TranslationService.friendly(e)); }
     }
     private void chooseFiles() {
-        if (FILE_IO.get() || TranslationService.RUNNING.get()) return;
+        if (FILE_IO.get() || TranslationService.RUNNING.get() || VideoProcessingService.RUNNING.get()) return;
         try {
             if (!store.load().isEmpty()) {
                 new AlertDialog.Builder(this).setTitle("Nov izbor datotek?")
@@ -147,7 +151,7 @@ public class MainActivity extends Activity {
         return "podnapisi.srt";
     }
     private void importFiles(List<Uri> uris) {
-        if (TranslationService.RUNNING.get() || !FILE_IO.compareAndSet(false, true)) return; refresh(); message("Preverjam datoteke …");
+        if (TranslationService.RUNNING.get() || VideoProcessingService.RUNNING.get() || !FILE_IO.compareAndSet(false, true)) return; refresh(); message("Preverjam datoteke …");
         final String targetCode = ((TargetLanguage) targetLanguage.getSelectedItem()).code;
         io.execute(() -> {
             List<JobStore.Job> imported = new ArrayList<>();
@@ -175,7 +179,7 @@ public class MainActivity extends Activity {
         });
     }
     private void exportFiles(Uri destination, boolean asZip) {
-        if (TranslationService.RUNNING.get() || !FILE_IO.compareAndSet(false, true)) return; refresh(); message("Shranjujem prevode …");
+        if (TranslationService.RUNNING.get() || VideoProcessingService.RUNNING.get() || !FILE_IO.compareAndSet(false, true)) return; refresh(); message("Shranjujem prevode …");
         io.execute(() -> {
             List<Uri> created = new ArrayList<>();
             try {
@@ -212,13 +216,13 @@ public class MainActivity extends Activity {
     private void refresh() {
         if (summary == null) return;
         try {
-            List<JobStore.Job> jobs = store.load(); boolean running = TranslationService.RUNNING.get();
+            List<JobStore.Job> jobs = store.load(); boolean running = TranslationService.RUNNING.get(); boolean movieRunning = VideoProcessingService.RUNNING.get();
             int complete = 0; StringBuilder sig = new StringBuilder();
             for (JobStore.Job job : jobs) { if ("Končano".equals(job.status) && store.output(job).exists()) complete++; sig.append(job.id).append(job.status).append(job.done).append(job.error); }
-            select.setEnabled(!FILE_IO.get() && !running); start.setEnabled(!FILE_IO.get() && !running && !jobs.isEmpty() && complete < jobs.size());
+            select.setEnabled(!FILE_IO.get() && !running && !movieRunning); start.setEnabled(!FILE_IO.get() && !running && !movieRunning && !jobs.isEmpty() && complete < jobs.size());
             stop.setVisibility(running ? View.VISIBLE : View.GONE);
-            export.setEnabled(!FILE_IO.get() && !running && complete > 0); zip.setEnabled(!FILE_IO.get() && !running && complete > 0);
-            model.setEnabled(!FILE_IO.get() && !running); targetLanguage.setEnabled(!FILE_IO.get() && !running); apiKey.setEnabled(!running);
+            export.setEnabled(!FILE_IO.get() && !running && !movieRunning && complete > 0); zip.setEnabled(!FILE_IO.get() && !running && !movieRunning && complete > 0);
+            model.setEnabled(!FILE_IO.get() && !running && !movieRunning); targetLanguage.setEnabled(!FILE_IO.get() && !running && !movieRunning); apiKey.setEnabled(!running && !movieRunning);
             start.setText(jobs.stream().anyMatch(j -> j.done > 0 || "Napaka".equals(j.status)) ? "Nadaljuj / ponovi" : "Prevedi podnapise");
             summary.setText(jobs.isEmpty() ? "Izbranih ni še nobenih datotek." : "Datoteke: " + jobs.size() + "/25 · Dokončano: " + complete + "/" + jobs.size() + (running ? " · Prevajam …" : ""));
             sig.append(running);
@@ -248,6 +252,16 @@ public class MainActivity extends Activity {
     private Button button(LinearLayout parent, String label, View.OnClickListener action) {
         Button button = new Button(this); button.setText(label); button.setAllCaps(false); button.setMinHeight(dp(48)); button.setOnClickListener(action);
         parent.addView(button, new LinearLayout.LayoutParams(-1, -2)); return button;
+    }
+    private void tab(LinearLayout parent, String label, View.OnClickListener action) {
+        Button view = new Button(this); view.setText(label); view.setAllCaps(false); view.setOnClickListener(action);
+        parent.addView(view, new LinearLayout.LayoutParams(0, -2, 1));
+    }
+    private void openVideo(boolean speech) {
+        if (!TranslationService.RUNNING.get() && !VideoProcessingService.RUNNING.get())
+            getSharedPreferences("settings", 0).edit().putString("model", model.getSelectedItem().toString()).apply();
+        startActivity(new Intent(this, VideoActivity.class).putExtra("speech", speech)
+            .putExtra("target", ((TargetLanguage)targetLanguage.getSelectedItem()).code));
     }
     private void message(String value) { if (notice != null) notice.setText(value); }
     private void showMessage(String value) { handler.post(() -> message(value)); }

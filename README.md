@@ -1,22 +1,26 @@
 # SRT Prevajalnik GPT – Android
 
-Android aplikacija v slovenščini za prevajanje **1–25 angleških datotek SRT v slovenščino**, z izvozom datotek `.sl.srt` ali skupnega ZIP-a. Podpira Android 13 ali novejši, vključno s Samsung Galaxy A57. APK uporablja Androidovo izvajalno okolje in ne potrebuje knjižnic za posamezno procesorsko arhitekturo.
+Android aplikacija za prevajanje podnapisov in ustvarjanje podnapisov iz filmov. Podpira Android 13 ali novejši, vključno s Samsung Galaxy A57. Lasten strežnik ni potreben: uporabljaš svoj ključ OpenAI API.
 
-V razvojni veji je dodana izbira ciljnega jezika za nov izbor SRT: slovenščina, angleščina, hrvaščina, srbščina ali nemščina. Cilj je shranjen skupaj s čakalno vrsto, zato poznejša sprememba izbire ne pomeša že potrjenih prevodov. Stare čakalne vrste še naprej uporabljajo slovenščino. Obdelava podnapisov v sliki filma in prepis govora sta še v razvoju.
+**[Prenesi podpisani APK 1.1.0](downloads/SRT-Prevajalnik-GPT-1.1.0.apk?raw=true)** · [Kontrolne vsote SHA-256](downloads/SHA256SUMS.txt)
 
-**[Prenesi podpisani APK 1.0.2](downloads/SRT-Prevajalnik-GPT-1.0.2.apk?raw=true)** · [Kontrolne vsote SHA-256](downloads/SHA256SUMS.txt)
+Posodobitev namesti čez prejšnjo različico, brez odstranitve aplikacije. Ohrani shranjeni ključ, izbor SRT in že potrjene prevode. Na voljo so trije zavihki:
 
-Različica 1.0.2 popravi ustavljanje zaradi napačnega ali podvojenega ID-ja v odgovoru modela. API zdaj zahteva objekt z vnaprej določenimi ključi za točno zahtevane vrstice. Vključeni so tudi popravki praznih odgovorov in dodatnih prelomov iz 1.0.1. APK namesti kot **posodobitev obstoječe aplikacije**, nato tapni **Nadaljuj / ponovi**. API-ključ, izbrani SRT, že potrjene vrstice in dokončane datoteke ostanejo shranjeni; aplikacije pred nadgradnjo ne odstranjuj.
+- **SRT:** izbira do 25 datotek in prevod v slovenščino, angleščino, hrvaščino, srbščino ali nemščino. Stare čakalne vrste še naprej uporabljajo slovenščino.
+- **Slika:** aplikacija bere podnapise, zapečene v sliko izbranega filma do 20 GB, in jih prevede v izbrani jezik. Pregleda eno sličico na pol sekunde, zato lahko kratke podnapise zgreši; časovne oznake so približne.
+- **Govor:** aplikacija prepiše zvok iz filma do 20 GB in izdela slovenski SRT. Govor razdeli na štirisekundne odseke, zato so časi približni in so besede na mejah odsekov lahko prekinjene. Uporabi prvi zvočni posnetek.
+
+Pri filmskih zavihkih preveri rezultat in časovno usklajenost. Podprti so formati, ki jih telefon zna prebrati in dekodirati. Dolgi filmi zahtevajo veliko zahtev API-ja in lahko povzročijo znatne stroške; aplikacija pred začetkom prikaže število zahtev. Začasni napredek se shrani in ga je mogoče nadaljevati, vendar zadnja nedokončana zahteva lahko nastane ponovno. Med delom izvorne datoteke ne spreminjaj. Film ostane na telefonu, izbrane sličice oziroma zvočni odseki pa se pošljejo OpenAI. Prepis govora uporablja model `gpt-transcribe`, ki mora biti dostopen tvojemu računu API.
 
 ## Uporaba
 
 1. Namesti podpisani APK na telefon. Ob namestitvi po potrebi dovoli nameščanje aplikacij za brskalnik oziroma upravitelja datotek, s katerim si odprl APK.
 2. V aplikacijo vnesi svoj **OpenAI API-ključ** in tapni **Shrani ključ**. Ključ pridobiš na https://platform.openai.com/api-keys. API potrebuje svoje dobroimetje; naročnina ChatGPT ne vključuje porabe API-ja. Ključa ne objavljaj na GitHubu ali v pogovoru.
 3. Izberi model: privzeti `gpt-4.1-mini` ali `gpt-4.1`.
-4. Tapni **Izberi SRT datoteke (do 25)**. V Androidovem izbirniku pridrži prvo datoteko in označi druge. Izbor nad 25 je zavrnjen v celoti; obstoječi izbor ostane ohranjen.
-5. Tapni **Prevedi v slovenščino**. Aplikacija pokaže napredek po datotekah in vrsticah. Omogoči obvestila za prikaz napredka tudi zunaj aplikacije. Internet mora ostati na voljo.
+4. V zavihku **SRT** izberi ciljni jezik in tapni **Izberi SRT datoteke (do 25)**. V Androidovem izbirniku pridrži prvo datoteko in označi druge. Izbor nad 25 je zavrnjen v celoti; obstoječi izbor ostane ohranjen.
+5. Začni prevajanje. Aplikacija pokaže napredek po datotekah in vrsticah. Omogoči obvestila za prikaz napredka tudi zunaj aplikacije. Internet mora ostati na voljo.
 6. Po potrebi tapni **Ustavi prevajanje**, nato **Nadaljuj / ponovi**. Že potrjeni paketi so shranjeni na telefonu. Zadnja nedokončana zahteva se lahko ponovi in povzroči dodatno porabo API-ja.
-7. Tapni **Shrani slovenske SRT v mapo** in izberi izhodno mapo ali **Shrani vse prevedene kot ZIP** ter izberi ime in mesto shranjevanja. Izvoz vsebuje samo v celoti zaključene in preverjene prevode. Če so nekatere datoteke neuspešne, jih lahko ponovno obdelaš.
+7. Tapni gumb za shranjevanje SRT v mapo in izberi izhodno mapo ali **Shrani vse prevedene kot ZIP** ter izberi ime in mesto shranjevanja. Izvoz vsebuje samo v celoti zaključene in preverjene prevode. Če so nekatere datoteke neuspešne, jih lahko ponovno obdelaš.
 
 ## Ohranitev podnapisov
 
@@ -31,9 +35,9 @@ Različica 1.0.2 popravi ustavljanje zaradi napačnega ali podvojenega ID-ja v o
 
 ## Ključ in podatki
 
-Aplikacija se poveže neposredno z `https://api.openai.com/v1/chat/completions`; lasten strežnik ni potreben. Pošilja dialoge in njihove interne ID-je. API-ključ je šifriran z AES-GCM in Android Keystore. Ni v APK-ju, dnevnikih, izvornem repozitoriju ali varnostni kopiji aplikacije. Odstraniš ga z **Pozabi ključ**. Varnostno kopiranje aplikacije je izključeno.
+Aplikacija se poveže neposredno z OpenAI API; lasten strežnik ni potreben. Pri prevajanju pošilja dialoge in njihove interne ID-je, pri filmskih zavihkih pa tudi sličice oziroma zvočne odseke. API-ključ je šifriran z AES-GCM in Android Keystore. Ni v APK-ju, dnevnikih, izvornem repozitoriju ali varnostni kopiji aplikacije. Odstraniš ga z **Pozabi ključ**. Varnostno kopiranje aplikacije je izključeno.
 
-Izbrane datoteke se kopirajo v zasebni prostor aplikacije; potrjeni prevodi in napredek ostanejo do novega izbora oziroma odstranitve aplikacije. Nov izbor zamenja staro čakalno vrsto po potrditvi. Izvožene datoteke ostanejo v izbrani mapi. Izvorni SRT-ji se ne spreminjajo. Android lahko dolgo delo prekine; aplikacija ga nadaljuje na zahtevo. Pri Androidu 15 in novejšem velja sistemska časovna omejitev storitve `dataSync`.
+Izbrane datoteke SRT se kopirajo v zasebni prostor aplikacije; filmi ostanejo na svojem mestu in aplikacija hrani dovoljenje za njihov dostop. Potrjeni prevodi in napredek ostanejo do novega izbora oziroma odstranitve aplikacije. Nov izbor zamenja staro čakalno vrsto po potrditvi. Izvožene datoteke ostanejo v izbrani mapi. Izvorni SRT-ji se ne spreminjajo. Android lahko dolgo delo prekine; aplikacija ga nadaljuje na zahtevo. Pri Androidu 15 in novejšem velja sistemska časovna omejitev storitve `dataSync`.
 
 ## Gradnja in preizkusi
 
@@ -53,4 +57,4 @@ Za podpisano izdajo nastavi `SRT_KEYSTORE`, `SRT_KEYSTORE_PASSWORD` in uporabi k
 
 Izdaja nastane v `app/build/outputs/apk/release/app-release.apk`. Brez nastavitve podpisnega ključa Gradle izdela nepodpisano izdajo. Podpisni ključ hrani ločeno: za nadgradnjo iste namestitve bo potreben isti ključ. Ključev ne dodajaj v repozitorij.
 
-Preizkusi vključujejo obdelavo in izvoz 25 SRT z nadomestnim odgovorom API-ja ter Androidov vmesnik na Robolectric/Android 15. To ne nadomesti preverjanja dejanskega prevoda z uporabnikovim API-ključem in fizičnega preizkusa na Samsungu. Podrobnosti so v [TESTING.md](TESTING.md).
+Preizkusi vključujejo obdelavo in izvoz 25 SRT, filmska postopka z nadomestnimi odgovori API-ja, Androidov vmesnik na Robolectric/Android 15 ter dekodiranje kratkega preskusnega filma na Android emulatorju. To ne nadomesti preverjanja dejanskega prevoda z uporabnikovim API-ključem in fizičnega preizkusa na Samsungu. Podrobnosti so v [TESTING.md](TESTING.md).
