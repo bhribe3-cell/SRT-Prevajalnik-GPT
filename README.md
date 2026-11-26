@@ -2,15 +2,15 @@
 
 Android aplikacija za prevajanje podnapisov in ustvarjanje podnapisov iz filmov. Podpira Android 13 ali novejši, vključno s Samsung Galaxy A57. Lasten strežnik ni potreben: uporabljaš svoj ključ OpenAI API.
 
-**[Prenesi podpisani APK 1.1.0](downloads/SRT-Prevajalnik-GPT-1.1.0.apk?raw=true)** · [Kontrolne vsote SHA-256](downloads/SHA256SUMS.txt)
+**[Prenesi podpisani APK 1.1.1](downloads/SRT-Prevajalnik-GPT-1.1.1.apk?raw=true)** · [Kontrolne vsote SHA-256](downloads/SHA256SUMS.txt)
 
 Posodobitev namesti čez prejšnjo različico, brez odstranitve aplikacije. Ohrani shranjeni ključ, izbor SRT in že potrjene prevode. Na voljo so trije zavihki:
 
 - **SRT:** izbira do 25 datotek in prevod v slovenščino, angleščino, hrvaščino, srbščino ali nemščino. Stare čakalne vrste še naprej uporabljajo slovenščino.
 - **Slika:** aplikacija bere podnapise, zapečene v sliko izbranega filma do 20 GB, in jih prevede v izbrani jezik. Pregleda eno sličico na pol sekunde, zato lahko kratke podnapise zgreši; časovne oznake so približne.
-- **Govor:** aplikacija prepiše zvok iz filma do 20 GB in izdela slovenski SRT. Govor razdeli na štirisekundne odseke, zato so časi približni in so besede na mejah odsekov lahko prekinjene. Uporabi prvi zvočni posnetek.
+- **Govor:** aplikacija prepiše zvok iz filma do 20 GB in izdela slovenski SRT. Prepoznavanje vrne časovne oznake govornih odsekov, s prekrivanjem zvoka ob mejah zaradi konteksta; čas in prepis sta še vedno lahko netočna. Uporabi prvi zvočni posnetek.
 
-Pri filmskih zavihkih preveri rezultat in časovno usklajenost. Podprti so formati, ki jih telefon zna prebrati in dekodirati. Dolgi filmi zahtevajo veliko zahtev API-ja in lahko povzročijo znatne stroške; aplikacija pred začetkom prikaže število zahtev. Začasni napredek se shrani in ga je mogoče nadaljevati, vendar zadnja nedokončana zahteva lahko nastane ponovno. Med delom izvorne datoteke ne spreminjaj. Film ostane na telefonu, izbrane sličice oziroma zvočni odseki pa se pošljejo OpenAI. Prepis govora uporablja model `gpt-transcribe`, ki mora biti dostopen tvojemu računu API.
+Pri filmskih zavihkih preveri rezultat in časovno usklajenost. Podprti so formati, ki jih telefon zna prebrati in dekodirati. Dolgi filmi zahtevajo veliko zahtev API-ja in lahko povzročijo znatne stroške; aplikacija pred začetkom prikaže število zahtev. Začasni napredek se shrani in ga je mogoče nadaljevati, vendar zadnja nedokončana zahteva lahko nastane ponovno. Med delom izvorne datoteke ne spreminjaj. Film ostane na telefonu, izbrane sličice oziroma zvočni odseki pa se pošljejo OpenAI. Nov prepis govora uporablja model `gpt-4o-transcribe-diarize`, ki mora biti dostopen tvojemu računu API. Prej začeto govorno opravilo nadaljuje po starem postopku z modelom `gpt-transcribe`.
 
 ## Uporaba
 

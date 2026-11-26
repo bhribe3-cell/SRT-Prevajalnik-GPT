@@ -1,3 +1,9 @@
+# Preverjanje izdaje 1.1.1
+
+Zavihek za govor pri novih opravilih uporablja model `gpt-4o-transcribe-diarize` in časovne oznake odsekov iz `diarized_json`. Posamezne zahteve vključujejo še zvok okoli meje odseka; podnapis se razporedi glede na sredino časovno označenega govora. Prekrivajoči se govorci se ohranijo v večvrstičnem podnapisu. Časovne oznake in prepoznava so kljub temu ocene, prehod na meji odsekov pa lahko povzroči netočnosti ali podvojitve. Opravila, začeta z različico 1.1.0, nadaljujejo po starem postopku; predpomnilnik in obstoječa čakalna vrsta SRT se ne spreminjata.
+
+Gradnja `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest` in podpisana izdaja sta uspešni, vseh 78 enotskih preizkusov je uspešnih. Preizkusi preverjajo pretvorbo časov API-ja, glasove s prekrivanjem, meje odsekov, preprečevanje izvoza neveljavnih časov, mono mešanje kanalov, nadaljevanje po prekinitvi in združljivost shranjenih opravil. Uporabljajo nadomestne odgovore API-ja. Lint ni poročal o napakah. APK ima `versionCode=5` in enak podpis kot 1.1.0. Plačljivega dejanskega klica API in fizičnega Samsunga nismo imeli na voljo.
+
 # Preverjanje izdaje 1.1.0
 
 Samodejni preizkusi: 71 uspešnih, brez neuspešnih ali preskočenih. `lintDebug` je uspešen brez napak, z opozorili. Preizkusi pokrivajo izbiro petih ciljnih jezikov, združljivost stare čakalne vrste, omejitev 25 SRT, shranjevanje in nadaljevanje filmskih nalog, preverjanje odgovorov, časovnice, sestavljanje podnapisov, branje zvoka in zavrnitev prevelikih datotek. Omejitev 20 GB je preizkušena s sintetično redko datoteko, ne z dejanskim 20 GB filmom.

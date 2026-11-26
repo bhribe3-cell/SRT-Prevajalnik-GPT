@@ -41,7 +41,7 @@ final class OpenAiSpeechTranscriber {
         if (result.length() > 20_000) throw new IOException("Prepis zvočnega odseka je predolg.");
         return result;
     }
-    private String request(Multipart multipart) throws Exception {
+    String request(Multipart multipart) throws Exception {
         HttpsURLConnection connection = (HttpsURLConnection)new URL("https://api.openai.com/v1/audio/transcriptions").openConnection(); active = connection;
         try {
             connection.setRequestMethod("POST"); connection.setConnectTimeout(20000); connection.setReadTimeout(120000);
