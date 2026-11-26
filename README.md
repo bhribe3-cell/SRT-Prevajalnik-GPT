@@ -2,7 +2,9 @@
 
 Android aplikacija za prevajanje podnapisov in ustvarjanje podnapisov iz filmov. Podpira Android 13 ali novejši, vključno s Samsung Galaxy A57. Lasten strežnik ni potreben: uporabljaš svoj ključ OpenAI API.
 
-**[Prenesi podpisani APK 1.1.2](downloads/SRT-Prevajalnik-GPT-1.1.2.apk?raw=true)** · [Kontrolne vsote SHA-256](downloads/SHA256SUMS.txt)
+**[Prenesi podpisani APK 1.1.3](downloads/SRT-Prevajalnik-GPT-1.1.3.apk?raw=true)** · [Kontrolne vsote SHA-256](downloads/SHA256SUMS.txt)
+
+Različica 1.1.3 skuša obnoviti dekoder, ko se posamezna sličica filma ne prebere, in najprej znova zahteva isto časovno točko. Če to ne uspe, lahko uporabi sličico največ 0,1 sekunde prej ali pozneje. To lahko vpliva na zelo kratke podnapise; pred izvozom avtomatsko ne zagotavlja popolnosti. Če vseh poskusov ni mogoče izvesti, se delo ustavi in potrjene sličice ostanejo shranjene. Film nadaljuješ z **Začni / nadaljuj**, brez ponovnega izbiranja.
 
 Različica 1.1.2 upošteva dejanski izhod zvočnega dekoderja pri večkanalnih posnetkih, tudi če se število kanalov ali PCM oblika razlikuje od izvorne sledi. Pri 4K filmu poskuša pridobiti zmanjšano sličico že pri dekodiranju. Če branje sličice ali zahteva OpenAI predolgo obstane, prikaže napako; potrjeni napredek ostane in delo je mogoče nadaljevati. Film in uporabniški ključ niso vključeni v preizkusne datoteke.
 
