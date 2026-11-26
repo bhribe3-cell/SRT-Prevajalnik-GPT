@@ -24,10 +24,9 @@ final class VideoAudioReader {
                 MediaFormat candidate = extractor.getTrackFormat(i); String mime = candidate.getString(MediaFormat.KEY_MIME);
                 if (mime != null && mime.startsWith("audio/")) { audioTrack = i; format = candidate; break; }
             }
-            if (audioTrack < 0 || format == null) throw new IOException("Film nima zvočne sledi.");
+            if (audioTrack < 0 || format == null) throw new IOException("Film nima zvočne sledi ali naprava ne podpira njenega zapisa.");
             String mime = format.getString(MediaFormat.KEY_MIME);
-            int sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE), channels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
-            PcmWindow window = new PcmWindow(startMs, endMs, sampleRate, channels, mono);
+            PcmWindow window = null; DecodedPcmFormat decodedFormat = null;
             extractor.selectTrack(audioTrack); extractor.seekTo(startMs * 1000, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
             if (extractor.getSampleTime() < 0) throw new IOException("Zvočne sledi ni mogoče prebrati.");
             format.setInteger(MediaFormat.KEY_PCM_ENCODING, AudioFormat.ENCODING_PCM_16BIT);
@@ -58,14 +57,20 @@ final class VideoAudioReader {
                 }
                 int index = codec.dequeueOutputBuffer(info, 10_000);
                 if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    MediaFormat output = codec.getOutputFormat();
-                    if (output.getInteger(MediaFormat.KEY_SAMPLE_RATE) != sampleRate || output.getInteger(MediaFormat.KEY_CHANNEL_COUNT) != channels
-                        || (output.containsKey(MediaFormat.KEY_PCM_ENCODING) && output.getInteger(MediaFormat.KEY_PCM_ENCODING) != AudioFormat.ENCODING_PCM_16BIT))
-                        throw new IOException("Oblika dekodiranega zvoka ni podprta.");
+                    DecodedPcmFormat actual = DecodedPcmFormat.from(codec.getOutputFormat());
+                    if (decodedBytes > 0 && !actual.equals(decodedFormat)) throw new IOException("Oblika zvoka se je med dekodiranjem spremenila.");
+                    if (!actual.equals(decodedFormat)) {
+                        decodedFormat = actual;
+                        window = new PcmWindow(startMs, endMs, actual.sampleRate(), actual.channels(), mono, actual.encoding());
+                    }
                 } else if (index >= 0) {
                     ByteBuffer output = codec.getOutputBuffer(index);
                     if (info.size > 0) {
                         if (output == null) throw new IOException("Dekodiranega zvoka ni mogoče prebrati.");
+                        if (window == null) {
+                            decodedFormat = DecodedPcmFormat.from(codec.getOutputFormat());
+                            window = new PcmWindow(startMs, endMs, decodedFormat.sampleRate(), decodedFormat.channels(), mono, decodedFormat.encoding());
+                        }
                         output.position(info.offset); output.limit(info.offset + info.size);
                         window.write(info.presentationTimeUs, output);
                         decodedBytes += info.size;
