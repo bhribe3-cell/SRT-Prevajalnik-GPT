@@ -33,4 +33,12 @@ public class VideoJobStoreTest {
         SrtDocument document = SrtDocument.parse("1\n00:00:00,000 --> 00:00:01,000\nHello\n\n");
         assertThrows(IllegalArgumentException.class, () -> store.loadTranslations(document));
     }
+    @Test public void timedSpeechAndLegacyVersionSurviveRestart() throws Exception {
+        VideoJobStore store = new VideoJobStore(RuntimeEnvironment.getApplication(), true);
+        VideoJobStore.Job job = new VideoJobStore.Job("content://movie", "movie.mp4", "sl", 10000, 500);
+        store.save(job); assertEquals(1, store.load().speechVersion);
+        job.speechVersion = 2; store.save(job); assertEquals(2, store.load().speechVersion);
+        List<TimedSpeechEngine.Window> windows = List.of(new TimedSpeechEngine.Window(0,10000,List.of(new VideoTimeline.Interval(100,500,"Hello"))));
+        store.saveTimedSpeech(windows); assertEquals(windows, new VideoJobStore(RuntimeEnvironment.getApplication(), true).loadTimedSpeech());
+    }
 }

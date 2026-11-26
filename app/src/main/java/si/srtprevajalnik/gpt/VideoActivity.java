@@ -48,7 +48,7 @@ public final class VideoActivity extends Activity {
         tab(tabs, "Slika", v -> switchMode(false)); tab(tabs, "Govor", v -> switchMode(true));
         text(root, speech ? "Govor iz filma" : "Podnapisi v sliki filma", 22, true);
         text(root, speech
-            ? "Film ostane na telefonu. Njegov zvok se po krajših odsekih pošlje OpenAI za prepis in prevod v slovenščino. Časi so približni po štirisekundnih odsekih; rezultat preglej."
+            ? "Film ostane na telefonu. Njegov zvok se po krajših odsekih pošlje OpenAI za prepis in prevod v slovenščino. Časovne oznake določi prepoznavanje govora; rezultat preglej."
             : "Film ostane na telefonu. Izbrane sličice se pošljejo OpenAI za prepoznavanje in prevod. Vzorčenje na 0,5 sekunde lahko spregleda kratke podnapise; rezultat preglej.", 15, false);
         if (!speech) {
             text(root, "Ciljni jezik za nov film", 14, true);
@@ -114,7 +114,8 @@ public final class VideoActivity extends Activity {
                 String movieName = name(uri); VideoJobStore.Job job;
                 try (VideoFrameReader reader = new VideoFrameReader(this, uri)) {
                     job = new VideoJobStore.Job(uri.toString(), movieName, code, reader.durationMs, reader.sizeBytes);
-                    job.total = mode ? SpeechTimeline.windowCount(reader.durationMs) : VideoTimeline.sampleCount(reader.durationMs, VideoTimeline.FRAME_INTERVAL_MS);
+                    if (mode) job.speechVersion = 2;
+                    job.total = mode ? TimedSpeechEngine.count(reader.durationMs) : VideoTimeline.sampleCount(reader.durationMs, VideoTimeline.FRAME_INTERVAL_MS);
                 }
                 job.fingerprint = VideoFingerprint.read(this, uri);
                 VideoJobStore store = new VideoJobStore(this, mode); store.clearResults(); store.save(job);
@@ -173,7 +174,7 @@ public final class VideoActivity extends Activity {
             if (job == null) { status.setText("Film še ni izbran."); detail.setText(""); progress.setProgress(0); return; }
             String current = !activeHere && (job.status.startsWith("Prepoznavam") || job.status.startsWith("Prepisujem") || "Prevajam".equals(job.status)) ? "Prekinjeno – nadaljuj" : job.status;
             status.setText(job.name + "\n" + current + " · " + job.done + "/" + job.total);
-            long units = speech ? SpeechTimeline.windowCount(job.durationMs) : VideoTimeline.sampleCount(job.durationMs, VideoTimeline.FRAME_INTERVAL_MS);
+            long units = speech ? (job.speechVersion == 2 ? TimedSpeechEngine.count(job.durationMs) : SpeechTimeline.windowCount(job.durationMs)) : VideoTimeline.sampleCount(job.durationMs, VideoTimeline.FRAME_INTERVAL_MS);
             long requests = speech ? units : (units + VideoTimeline.MAX_FRAME_BATCH - 1) / VideoTimeline.MAX_FRAME_BATCH;
             detail.setText("Ciljni jezik: " + TargetLanguage.fromCode(job.target).display + " · " + (speech ? "zvočnih odsekov: " : "sličic: ") + units
                 + "\nNačrtovanih zahtev za " + (speech ? "prepis: " : "prepoznavanje: ") + requests + " + prevajanje."

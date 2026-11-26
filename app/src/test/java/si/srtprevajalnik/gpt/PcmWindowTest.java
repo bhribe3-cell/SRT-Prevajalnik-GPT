@@ -25,4 +25,12 @@ public class PcmWindowTest {
         PcmWindow window = new PcmWindow(0, 1000, 48000, 2);
         assertThrows(IllegalArgumentException.class, () -> window.write(0, ByteBuffer.wrap(new byte[3])));
     }
+    @Test public void timedWindowsDownmixStereoWithoutChangingTiming() {
+        PcmWindow window = new PcmWindow(0, 2, 8000, 2, true);
+        ByteBuffer source = ByteBuffer.allocate(16 * 4).order(ByteOrder.LITTLE_ENDIAN);
+        for (int i = 0; i < 16; i++) source.putShort((short)1000).putShort((short)-500);
+        window.write(0, ByteBuffer.wrap(source.array())); byte[] wav = window.wav();
+        ByteBuffer out = ByteBuffer.wrap(wav).order(ByteOrder.LITTLE_ENDIAN);
+        assertEquals(1, out.getShort(22)); assertEquals(32, out.getInt(40)); assertEquals(250, out.getShort(44));
+    }
 }

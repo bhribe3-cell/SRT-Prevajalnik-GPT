@@ -13,7 +13,9 @@ final class VideoAudioReader {
     private final Uri uri;
     VideoAudioReader(Context context, Uri uri) { this.context = context.getApplicationContext(); this.uri = uri; }
 
-    SpeechTranscriptionEngine.Audio read(long startMs, long endMs) throws IOException, InterruptedException {
+    SpeechTranscriptionEngine.Audio read(long startMs, long endMs) throws IOException, InterruptedException { return read(startMs, endMs, false); }
+    SpeechTranscriptionEngine.Audio readTimed(long startMs, long endMs) throws IOException, InterruptedException { return read(startMs, endMs, true); }
+    private SpeechTranscriptionEngine.Audio read(long startMs, long endMs, boolean mono) throws IOException, InterruptedException {
         MediaExtractor extractor = new MediaExtractor(); MediaCodec codec = null; boolean started = false;
         try {
             extractor.setDataSource(context, uri, Collections.emptyMap());
@@ -25,7 +27,7 @@ final class VideoAudioReader {
             if (audioTrack < 0 || format == null) throw new IOException("Film nima zvočne sledi.");
             String mime = format.getString(MediaFormat.KEY_MIME);
             int sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE), channels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
-            PcmWindow window = new PcmWindow(startMs, endMs, sampleRate, channels);
+            PcmWindow window = new PcmWindow(startMs, endMs, sampleRate, channels, mono);
             extractor.selectTrack(audioTrack); extractor.seekTo(startMs * 1000, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
             if (extractor.getSampleTime() < 0) throw new IOException("Zvočne sledi ni mogoče prebrati.");
             format.setInteger(MediaFormat.KEY_PCM_ENCODING, AudioFormat.ENCODING_PCM_16BIT);

@@ -52,5 +52,11 @@ public class VideoMediaDeviceTest {
             saved -> { savedSpeech.clear(); savedSpeech.addAll(saved); }, translated, fakeTranslator, translated::putAll, () -> {});
         assertEquals("1\n00:00:00,000 --> 00:00:03,000\nŽivjo!\n\n", speechOutput);
         assertEquals(1, savedSpeech.size());
+        List<TimedSpeechEngine.Window> timed = new ArrayList<>();
+        TimedSpeechTranscriber fakeTimed = new TimedSpeechTranscriber("fake", body -> "{\"text\":\"Hello!\",\"segments\":[{\"start\":0.5,\"end\":1.4,\"text\":\"Hello!\",\"speaker\":\"A\"}]}");
+        List<VideoTimeline.Interval> recognized = TimedSpeechEngine.scan(3000, timed, audio::readTimed,
+            chunk -> fakeTimed.transcribe(chunk, () -> {}), windows -> { timed.clear(); timed.addAll(windows); }, () -> {});
+        assertEquals(List.of(new VideoTimeline.Interval(500, 1400, "Hello!")), recognized);
+        assertTrue(VideoTimeline.toSrt(recognized).contains("00:00:00,500 --> 00:00:01,400"));
     }
 }

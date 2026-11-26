@@ -14,6 +14,7 @@ public final class VideoProcessingService extends Service {
     private volatile boolean cancelled;
     private volatile VideoFrameRecognizer vision;
     private volatile OpenAiSpeechTranscriber speechApi;
+    private volatile TimedSpeechTranscriber timedSpeechApi;
     private volatile OpenAiTranslator translator;
     private Thread worker;
     private static final String CHANNEL = "video_translation";
@@ -43,8 +44,8 @@ public final class VideoProcessingService extends Service {
     private void check() throws InterruptedException { if (cancelled || Thread.currentThread().isInterrupted()) throw new InterruptedException(); }
     private void cancelWork() {
         cancelled = true; if (worker != null) worker.interrupt();
-        VideoFrameRecognizer v = vision; OpenAiSpeechTranscriber a = speechApi; OpenAiTranslator t = translator;
-        new Thread(() -> { if (v != null) v.cancel(); if (a != null) a.cancel(); if (t != null) t.cancelActive(); }, "movie-cancel").start();
+        VideoFrameRecognizer v = vision; OpenAiSpeechTranscriber a = speechApi; TimedSpeechTranscriber timed = timedSpeechApi; OpenAiTranslator t = translator;
+        new Thread(() -> { if (v != null) v.cancel(); if (a != null) a.cancel(); if (timed != null) timed.cancel(); if (t != null) t.cancelActive(); }, "movie-cancel").start();
     }
     private void process(boolean isSpeech) {
         VideoJobStore store = new VideoJobStore(this, isSpeech); VideoJobStore.Job job = null;
@@ -62,16 +63,25 @@ public final class VideoProcessingService extends Service {
                 if (reader.durationMs != job.durationMs || (job.sizeBytes >= 0 && reader.sizeBytes >= 0 && job.sizeBytes != reader.sizeBytes))
                     throw new IllegalArgumentException("Film se je spremenil. Ponovno ga izberi.");
                 job.status = isSpeech ? "Prepisujem govor" : "Prepoznavam podnapise"; job.error = "";
-                job.total = isSpeech ? SpeechTimeline.windowCount(reader.durationMs) : VideoTimeline.sampleCount(reader.durationMs, VideoTimeline.FRAME_INTERVAL_MS);
+                job.total = isSpeech ? (job.speechVersion == 2 ? TimedSpeechEngine.count(reader.durationMs) : SpeechTimeline.windowCount(reader.durationMs)) : VideoTimeline.sampleCount(reader.durationMs, VideoTimeline.FRAME_INTERVAL_MS);
                 store.save(job);
                 if (isSpeech) {
-                    List<SpeechTimeline.Window> checkpoint = store.loadSpeech(); VideoAudioReader audio = new VideoAudioReader(this, uri);
-                    speechApi = new OpenAiSpeechTranscriber(key);
-                    intervals = SpeechTranscriptionEngine.scan(reader.durationMs, checkpoint, audio::read,
-                        part -> speechApi.transcribe(part, this::check), windows -> {
-                            store.saveSpeech(windows); current.done = windows.size(); store.save(current);
-                            getSystemService(NotificationManager.class).notify(2, notification("Prepisujem govor · " + current.done + "/" + current.total, true));
-                        }, this::check);
+                    VideoAudioReader audio = new VideoAudioReader(this, uri);
+                    if (job.speechVersion == 2) {
+                        timedSpeechApi = new TimedSpeechTranscriber(key);
+                        intervals = TimedSpeechEngine.scan(reader.durationMs, store.loadTimedSpeech(), audio::readTimed,
+                            part -> timedSpeechApi.transcribe(part, this::check), windows -> {
+                                store.saveTimedSpeech(windows); current.done = windows.size(); store.save(current);
+                                getSystemService(NotificationManager.class).notify(2, notification("Prepisujem govor · " + current.done + "/" + current.total, true));
+                            }, this::check);
+                    } else {
+                        speechApi = new OpenAiSpeechTranscriber(key);
+                        intervals = SpeechTranscriptionEngine.scan(reader.durationMs, store.loadSpeech(), audio::read,
+                            part -> speechApi.transcribe(part, this::check), windows -> {
+                                store.saveSpeech(windows); current.done = windows.size(); store.save(current);
+                                getSystemService(NotificationManager.class).notify(2, notification("Prepisujem govor · " + current.done + "/" + current.total, true));
+                            }, this::check);
+                    }
                 } else {
                     List<VideoTimeline.Sample> checkpoint = store.loadFrames(); vision = new VideoFrameRecognizer(key, model);
                     intervals = VideoOcrEngine.scan(reader.durationMs, checkpoint, reader::frame,
@@ -100,7 +110,7 @@ public final class VideoProcessingService extends Service {
                 try { store.save(job); } catch (Exception ignored) {}
             }
         } finally {
-            vision = null; speechApi = null; translator = null;
+            vision = null; speechApi = null; timedSpeechApi = null; translator = null;
             if (wake.isHeld()) wake.release(); ACTIVE_SPEECH = null; RUNNING.set(false); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf();
         }
     }
