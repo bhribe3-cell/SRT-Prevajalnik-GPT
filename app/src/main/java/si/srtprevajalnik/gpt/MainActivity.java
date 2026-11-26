@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private JobStore store;
     private EditText apiKey;
-    private Spinner model;
+    private Spinner model, targetLanguage;
     private Button select, start, stop, export, zip;
     private LinearLayout fileList;
     private TextView summary, notice;
@@ -41,9 +41,9 @@ public class MainActivity extends Activity {
             android.graphics.Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom); return insets;
         });
-        text(root, "EN  →  SL", 14, true).setTextColor(Color.rgb(22,107,85));
+        text(root, "PODNAPISI", 14, true).setTextColor(Color.rgb(22,107,85));
         text(root, "SRT Prevajalnik GPT", 28, true);
-        text(root, "Angleški podnapisi v slovenščini. Do 25 datotek naenkrat.", 16, false);
+        text(root, "Prevedi do 25 datotek SRT naenkrat.", 16, false);
 
         LinearLayout settings = card(root);
         text(settings, "1. Poveži OpenAI", 20, true);
@@ -67,9 +67,13 @@ public class MainActivity extends Activity {
 
         LinearLayout work = card(root);
         text(work, "2. Izberi in prevedi", 20, true);
+        text(work, "Ciljni jezik za nov izbor", 14, true);
+        targetLanguage = new Spinner(this);
+        targetLanguage.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, TargetLanguage.values()));
+        work.addView(targetLanguage);
         select = button(work, "Izberi SRT datoteke (do 25)", v -> chooseFiles());
-        text(work, "V izbirniku pridrži prvo datoteko in označi še druge. Nov izbor zamenja prejšnjo čakalno vrsto.", 13, false);
-        start = button(work, "Prevedi v slovenščino", v -> beginTranslation());
+        text(work, "Najprej izberi ciljni jezik, nato v izbirniku pridrži prvo datoteko in označi še druge. Jezik se shrani skupaj z izborom; nov izbor zamenja prejšnjo čakalno vrsto.", 13, false);
+        start = button(work, "Prevedi podnapise", v -> beginTranslation());
         stop = button(work, "Ustavi prevajanje", v -> {
             startService(new Intent(this, TranslationService.class).setAction("cancel")); message("Ustavljam prevajanje …");
         });
@@ -79,9 +83,9 @@ public class MainActivity extends Activity {
 
         LinearLayout results = card(root);
         text(results, "3. Shrani podnapise", 20, true);
-        export = button(results, "Shrani slovenske SRT v mapo", v -> launch(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION), FOLDER));
-        zip = button(results, "Shrani vse prevedene kot ZIP", v -> launch(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("application/zip").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, "Slovenski-podnapisi.zip"), ZIP));
-        text(results, "Shranjene datoteke imajo končnico .sl.srt in kodiranje UTF-8. Izvoz vključuje samo v celoti preverjene prevode.", 13, false);
+        export = button(results, "Shrani prevedene SRT v mapo", v -> launch(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION), FOLDER));
+        zip = button(results, "Shrani vse prevedene kot ZIP", v -> launch(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("application/zip").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, "Prevedeni-podnapisi.zip"), ZIP));
+        text(results, "Ime shranjene datoteke vsebuje oznako ciljnega jezika. Izvoz vključuje samo v celoti preverjene prevode v UTF-8.", 13, false);
         notice = text(root, "Pripravljeno.", 14, false); notice.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         refresh();
     }
@@ -144,6 +148,7 @@ public class MainActivity extends Activity {
     }
     private void importFiles(List<Uri> uris) {
         if (TranslationService.RUNNING.get() || !FILE_IO.compareAndSet(false, true)) return; refresh(); message("Preverjam datoteke …");
+        final String targetCode = ((TargetLanguage) targetLanguage.getSelectedItem()).code;
         io.execute(() -> {
             List<JobStore.Job> imported = new ArrayList<>();
             try {
@@ -158,7 +163,7 @@ public class MainActivity extends Activity {
                     SrtDocument document;
                     try { document = SrtDocument.parse(source); }
                     catch (Exception e) { throw new IOException(name + ": " + e.getMessage()); }
-                    JobStore.Job job = new JobStore.Job(UUID.randomUUID().toString(), name); job.total = document.lines.size(); imported.add(job);
+                    JobStore.Job job = new JobStore.Job(UUID.randomUUID().toString(), name); job.total = document.lines.size(); job.targetLanguage = targetCode; imported.add(job);
                     JobStore.write(store.source(job), source);
                 }
                 store.save(imported); store.clearOldFiles(imported);
@@ -197,7 +202,7 @@ public class MainActivity extends Activity {
                         }
                     }
                 }
-                showMessage("Shranjeno: " + completed.size() + " slovenskih podnapisov" + (asZip ? " v izbrano datoteko ZIP." : " v izbrano mapo."));
+                showMessage("Shranjeno: " + completed.size() + " prevedenih podnapisov" + (asZip ? " v izbrano datoteko ZIP." : " v izbrano mapo."));
             } catch (Exception e) {
                 for (Uri uri : created) try { DocumentsContract.deleteDocument(getContentResolver(), uri); } catch (Exception ignored) { }
                 showMessage("Shranjevanje ni uspelo: " + TranslationService.friendly(e) + " Lokalni prevodi so ohranjeni.");
@@ -213,8 +218,8 @@ public class MainActivity extends Activity {
             select.setEnabled(!FILE_IO.get() && !running); start.setEnabled(!FILE_IO.get() && !running && !jobs.isEmpty() && complete < jobs.size());
             stop.setVisibility(running ? View.VISIBLE : View.GONE);
             export.setEnabled(!FILE_IO.get() && !running && complete > 0); zip.setEnabled(!FILE_IO.get() && !running && complete > 0);
-            model.setEnabled(!FILE_IO.get() && !running); apiKey.setEnabled(!running);
-            start.setText(jobs.stream().anyMatch(j -> j.done > 0 || "Napaka".equals(j.status)) ? "Nadaljuj / ponovi" : "Prevedi v slovenščino");
+            model.setEnabled(!FILE_IO.get() && !running); targetLanguage.setEnabled(!FILE_IO.get() && !running); apiKey.setEnabled(!running);
+            start.setText(jobs.stream().anyMatch(j -> j.done > 0 || "Napaka".equals(j.status)) ? "Nadaljuj / ponovi" : "Prevedi podnapise");
             summary.setText(jobs.isEmpty() ? "Izbranih ni še nobenih datotek." : "Datoteke: " + jobs.size() + "/25 · Dokončano: " + complete + "/" + jobs.size() + (running ? " · Prevajam …" : ""));
             sig.append(running);
             if (!signature.equals(sig.toString())) {
@@ -222,7 +227,7 @@ public class MainActivity extends Activity {
                 for (JobStore.Job job : jobs) {
                     String status = "Prevajam".equals(job.status) && !running ? "Prekinjeno – nadaljuj" : job.status;
                     text(fileList, job.name, 15, true);
-                    text(fileList, status + " · " + job.done + "/" + job.total + " vrstic" + (job.error.isEmpty() ? "" : "\n" + job.error), 13, false);
+                    text(fileList, status + " · " + TargetLanguage.fromCode(job.targetLanguage).display + " · " + job.done + "/" + job.total + " vrstic" + (job.error.isEmpty() ? "" : "\n" + job.error), 13, false);
                     ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
                     progress.setMax(Math.max(1, job.total)); progress.setProgress(job.done); fileList.addView(progress);
                 }

@@ -46,11 +46,11 @@ public final class TranslationService extends Service {
             jobs = store.load(); String key = KeyVault.load(this);
             if (key.isEmpty()) throw new OpenAiTranslator.FatalException("Najprej vnesi in shrani OpenAI API-ključ.");
             String model = getSharedPreferences("settings", 0).getString("model", "gpt-4.1-mini");
-            translator = new OpenAiTranslator(key, model);
             for (JobStore.Job job : jobs) {
                 checkCancel();
                 if ("Končano".equals(job.status) && store.output(job).exists()) continue;
                 try {
+                    translator = new OpenAiTranslator(key, model, TargetLanguage.fromCode(job.targetLanguage), null);
                     job.status = "Prevajam"; job.error = ""; store.save(jobs);
                     SrtDocument document = SrtDocument.parse(JobStore.read(new FileInputStream(store.source(job))));
                     Map<String, String> translations = new LinkedHashMap<>();

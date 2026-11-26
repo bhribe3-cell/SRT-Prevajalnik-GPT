@@ -2,6 +2,8 @@
 
 Android aplikacija v slovenščini za prevajanje **1–25 angleških datotek SRT v slovenščino**, z izvozom datotek `.sl.srt` ali skupnega ZIP-a. Podpira Android 13 ali novejši, vključno s Samsung Galaxy A57. APK uporablja Androidovo izvajalno okolje in ne potrebuje knjižnic za posamezno procesorsko arhitekturo.
 
+V razvojni veji je dodana izbira ciljnega jezika za nov izbor SRT: slovenščina, angleščina, hrvaščina, srbščina ali nemščina. Cilj je shranjen skupaj s čakalno vrsto, zato poznejša sprememba izbire ne pomeša že potrjenih prevodov. Stare čakalne vrste še naprej uporabljajo slovenščino. Obdelava podnapisov v sliki filma in prepis govora sta še v razvoju.
+
 **[Prenesi podpisani APK 1.0.2](downloads/SRT-Prevajalnik-GPT-1.0.2.apk?raw=true)** · [Kontrolne vsote SHA-256](downloads/SHA256SUMS.txt)
 
 Različica 1.0.2 popravi ustavljanje zaradi napačnega ali podvojenega ID-ja v odgovoru modela. API zdaj zahteva objekt z vnaprej določenimi ključi za točno zahtevane vrstice. Vključeni so tudi popravki praznih odgovorov in dodatnih prelomov iz 1.0.1. APK namesti kot **posodobitev obstoječe aplikacije**, nato tapni **Nadaljuj / ponovi**. API-ključ, izbrani SRT, že potrjene vrstice in dokončane datoteke ostanejo shranjeni; aplikacije pred nadgradnjo ne odstranjuj.

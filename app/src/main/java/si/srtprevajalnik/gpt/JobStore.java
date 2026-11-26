@@ -11,9 +11,10 @@ final class JobStore {
     static final int MAX_FILES = 25;
     static final class Job {
         String id, name, status = "Čaka", error = "";
+        String targetLanguage = "sl";
         int done, total;
         Job(String id, String name) { this.id = id; this.name = name; }
-        String outputName() { return name.replaceFirst("(?i)\\.srt$", "") + ".sl.srt"; }
+        String outputName() { return name.replaceFirst("(?i)\\.srt$", "") + "." + TargetLanguage.fromCode(targetLanguage).code + ".srt"; }
     }
     private final File directory;
     JobStore(Context context) { directory = new File(context.getFilesDir(), "jobs"); directory.mkdirs(); }
@@ -26,6 +27,8 @@ final class JobStore {
         for (int i = 0; i < array.length(); i++) {
             JSONObject object = array.getJSONObject(i); Job job = new Job(object.getString("id"), object.getString("name"));
             job.status = object.getString("status"); job.error = object.optString("error");
+            job.targetLanguage = object.optString("targetLanguage", "sl");
+            TargetLanguage.fromCode(job.targetLanguage);
             job.done = object.optInt("done"); job.total = object.optInt("total"); jobs.add(job);
         }
         return jobs;
@@ -33,7 +36,7 @@ final class JobStore {
     synchronized void save(List<Job> jobs) throws Exception {
         JSONArray array = new JSONArray();
         for (Job job : jobs) array.put(new JSONObject().put("id", job.id).put("name", job.name).put("status", job.status)
-            .put("error", job.error).put("done", job.done).put("total", job.total));
+            .put("error", job.error).put("done", job.done).put("total", job.total).put("targetLanguage", job.targetLanguage));
         write(new File(directory, "index.json"), array.toString());
     }
     static void write(File file, String value) throws IOException {
